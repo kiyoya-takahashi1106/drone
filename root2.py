@@ -1,14 +1,15 @@
-# mapをgroupごとに分ける.
-map_data = [
-    [1, 1, 0, 0],
-    [1, 1, 0, 1],
-    [0, 0, 1, 1],
-    [1, 0, 0, 0],
-    [0, 1, 1, 1],
-    [1, 1, 1, 1]
-]
-M = len(map_data)  # y軸方向
-N = len(map_data[0])  # x軸方向
+# BFSでmapをgroupごとに分ける.
+
+map = [
+        [1, 1, 1, 0],
+        [1, 1, 0, 0],
+        [0, 0, 1, 1],
+        [1, 0, 0, 1],
+        [0, 1, 1, 0],
+        [1, 1, 1, 1]
+      ]
+M = len(map)  # y軸方向
+N = len(map[0])  # x軸方向
 movements = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # 動き方(上, 下, 左, 右)
 people_lst = []  # 人がいる場所
 groups = []
@@ -16,11 +17,11 @@ groups = []
 # people_lstを作る
 for i in range(M):
     for j in range(N):
-        if map_data[i][j] == 1:
+        if map[i][j] == 1:
             people_lst.append([i, j])
 print("people_lst", people_lst)
 
-# BFSでstartを含むグループを決定する
+# BFSでstartを含むグループ化する
 def bfs(start):
     queue = [start]
     group = []

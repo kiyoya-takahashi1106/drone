@@ -2,19 +2,19 @@
 # DFSを用いて1を一筆書き出来たらRoot発見できる(孤島に1が存在したりしてたら探索不可)
 
 map = [
-        [1, 1, 0, 0],
+        [1, 1, 1, 0],
         [0, 1, 1, 0],
-        [0, 0, 1 ,1],
+        [0, 1, 1 ,1],
         [0, 0, 1, 1],
         [0, 0, 1, 0],
         [1, 1, 1, 0]
       ]   
 M = len(map)
 N = len(map[0])
-movement = [(-1, 0), (1, 0), (0, -1), (0, 1)]   # 動き方(上, 下, 左, 右)
+movements = [(-1, 0), (1, 0), (0, -1), (0, 1)]   # 動き方(上, 下, 左, 右)
 all_path = []   # すべての探索pathを入れる
 
-def dfs(map, M, N, visited_lst, movement, path, x, y):   # (x,y)は探索してる場所
+def dfs(visited_lst, path, x, y):   # (x,y)は探索してる場所
     if not (0 <= x < M and 0 <= y < N and map[x][y] == 1 and not visited_lst[x][y]):
         return   # 条件に合わなかったら親にreturn
     visited_lst[x][y] = True   # 訪問したからTrueにする
@@ -26,25 +26,26 @@ def dfs(map, M, N, visited_lst, movement, path, x, y):   # (x,y)は探索して�
         all_path.append(path[:])
     # まだ探索してない箇所があれば探索する
     else:
-        for dx, dy in movement:
+        for dx, dy in movements:
             new_x = x + dx
             new_y = y + dy
-            dfs(map, M, N, visited_lst, movement, path, new_x, new_y)
+            dfs(visited_lst, path, new_x, new_y)
         
     path.pop()   # 戻るときにパスから削除
     visited_lst[x][y] = False   # 戻るときに訪問リストを戻す
     print("-------------------------")
 
-def find_paths(map, M, N):
+def find_paths():
     visited_lst = [[False] * N for hoge in range(M)]   # 初期化
-    for x in range(M):
+    # 各1のところから探索開始している()
+    for x in range(M):   
         for y in range(N):
             if map[x][y] == 1 and visited_lst[x][y] != True:
                 path = []
-                dfs(map, M, N, visited_lst, movement, path, x, y)
+                dfs(visited_lst, path, x, y)
     return all_path
 
-find_paths(map, M, N)
+find_paths()
 print(all_path)
 
 # path中で0を通る数をカウントする関数
