@@ -1,4 +1,4 @@
-# BFSでmapをgroupごとに分ける.
+# 手順➀BFSでmapをgroupごとに分ける.
 
 map = [
         [1, 1, 1, 0],
@@ -42,3 +42,9 @@ while people_lst:
     groups.append(group)
 
 print("groups", groups)
+
+
+
+"""
+まずmapを取得するためになにかしらしないといけない(ex:椅子に重力センサを付けて人が座ってるか座ってないかを判定するなど)
+"""

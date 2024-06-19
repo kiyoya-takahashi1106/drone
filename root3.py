@@ -1,4 +1,4 @@
-# root2.pyで分けた各グループ事にBFSで探索する.
+# 手順➁root2.pyで分けた各グループ事にBFSで探索する.
 
 # droneの初期位置はMap[0][0]に下向き(↓)を想定
 map = [
@@ -53,3 +53,8 @@ def find_paths(group):
 
 for group in groups:
     find_paths(group)
+
+
+
+"""
+"""
