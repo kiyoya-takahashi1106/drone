@@ -1,3 +1,4 @@
+# Telloカメラサンプルコード1
 import socket
 import time
 import cv2
@@ -28,7 +29,6 @@ def receive():
     except Exception as e:
         print(f"Error receiving message: {e}")
 
-# ☆☆☆
 # スレッド終了用のイベントフラグ
 stop_event = threading.Event()
 
@@ -67,7 +67,9 @@ receive()
 # スレッドを停止する
 stop_event.set()
 video_thread.join()
-# ☆☆☆
 
 # ソケットを閉じる
 sock.close()
+
+# OpenCVウィンドウを閉じる
+cv2.destroyAllWindows()
