@@ -35,11 +35,7 @@ send("takeoff")
 time.sleep(5)
 
 # 前進（100cm）
-send("forward 100")
-time.sleep(5)
-
-# 後退（100cm）
-send("back 100")
+send("forward -100")
 time.sleep(5)
 
 # 着陸

@@ -40,21 +40,31 @@ map = [
         [0, 1, 1, 1],
         [0, 1, 1, 0] 
       ]
-y_Distance = 30
-x_Distance = 50
+y_Distance = 70
+x_Distance = 70
 root = [[0, 0], [0, 1], [1, 1], [2, 1], [2, 2], [1, 2], [1, 3], [1, 2]]   # (y, x)
 
-for i, x, y in enumerate(root):   # i:idxnum
+for i, [y, x] in enumerate(root):   # i:idxnum
     if(i == 0):
         pass
     else:
         change_y, change_x = y - old_y, x - old_x   # 何マス分動いたか
-        if(change_y == 0):   # x方向に動く
-            direction = "left"
+        # 左右方向に動く
+        if(change_y == 0):  
             distance = x_Distance * change_x
-        else:                # y方向に動く
-            directionhoge = "forward"
+            if(distance > 0):   # 左に動く
+                direction = "left"
+            if(distance < 0):   # 右に動く
+                direction = "right"
+                distance = -distance
+        # 上下方向に動く
+        else:                
             distance = y_Distance * change_y
+            if(distance > 0):   # 上に動く
+                direction = "forward"
+            if(distance < 0):   # 後ろに動く
+                direction = "back"
+                distance = -distance
         send(f"{direction} {distance}")
         time.sleep(5)
     old_y, old_x = y, x
