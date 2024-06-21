@@ -34,8 +34,12 @@ receive()
 send("takeoff")
 time.sleep(5)
 
-# 前進（100cm）
-send("forward -100")
+# 上昇
+send("up 50")
+time.sleep(5)
+
+# 下降
+send("down 50")
 time.sleep(5)
 
 # 着陸

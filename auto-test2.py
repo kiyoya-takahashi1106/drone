@@ -40,8 +40,8 @@ map = [
         [0, 1, 1, 1],
         [0, 1, 1, 0] 
       ]
-y_Distance = 70
-x_Distance = 70
+y_Distance = 30
+x_Distance = 30
 root = [[0, 0], [0, 1], [1, 1], [2, 1], [2, 2], [1, 2], [1, 3], [1, 2]]   # (y, x)
 
 for i, [y, x] in enumerate(root):   # i:idxnum

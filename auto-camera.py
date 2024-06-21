@@ -1,4 +1,5 @@
- # Telloカメラ顔認識サンプルコード2
+# auto-testとcameraの7割りぐらい完成形
+
 import socket
 import time
 import cv2
@@ -6,12 +7,14 @@ import numpy as np
 import av
 import threading
 
+# TelloのIPアドレスとポート番号
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
-LOCAL_PORT = 9000  
+LOCAL_PORT = 9000
 VIDEO_PORT = 11111
 
+# UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('', LOCAL_PORT))
 
@@ -24,7 +27,7 @@ def send(message):
 
 def receive():
     try:
-        response, _ = sock.recvfrom(1024)
+        response, _ = sock.recvfrom(1024)  # response:受信データ , _:送信元アドレス
         print(f"Received message: {response.decode()}")
     except Exception as e:
         print(f"Error receiving message: {e}")
@@ -45,7 +48,7 @@ def receive_video():
         image = cv2.cvtColor(np.array(frame.to_image()), cv2.COLOR_RGB2BGR)
         
         # フレームスキップ
-        if frame_skip % 8 == 0:  # Xフレームごとに顔検出を行う. ココは後々調整☆
+        if frame_skip % 10 == 0:  # Xフレームごとに顔検出を行う
             # グレースケールに変換
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             # 顔検出
@@ -73,8 +76,47 @@ receive()
 send("streamon")
 receive()
 
-# 30秒間映像を表示
-time.sleep(30)
+# 離陸
+send("takeoff")
+time.sleep(7)
+
+send("up 40")
+time.sleep(5)
+
+once_forward = 65   # 一回でどれだけ前進するか
+how_many_forward = 3   # 何回前進するか
+angle = 45   # 左右に向く角度
+for i in range(how_many_forward):
+    if(i == 0):
+        send(f"cw {angle}")
+        time.sleep(5)
+        send(f"ccw {angle * 2}")
+        time.sleep(5)
+        send(f"cw {angle}")
+        time.sleep(5)
+    else: continue    
+    send(f"forward {once_forward}")
+    time.sleep(5)
+    send(f"cw {angle}")
+    time.sleep(5)
+    send(f"ccw {angle * 2}")
+    time.sleep(5)
+    send(f"cw {angle}")
+    time.sleep(5)
+
+# 元の位置に戻る
+time.sleep(5) 
+if(once_forward * how_many_forward < 500 ):
+    send(f"back {once_forward * how_many_forward}")
+else:
+    time.sleep(4)
+    send(f"back {once_forward * how_many_forward / 2}")
+    time.sleep(11)   # 長くとらないとダメかも
+    send(f"back {once_forward * how_many_forward / 2}")
+
+# 着陸
+send("land")
+receive()
 
 # カメラストリームをオフにする
 send("streamoff")
@@ -93,6 +135,6 @@ cv2.destroyAllWindows()
 
 
 """
-毎フレーム顔認識してると遅延が10行ほどになる.
-10フレームごとに顔認識すると遅延はかなり少なくなった.
+遅延が気になるのであれば左右向いたときのsleep時間を多めに取り,1回の顔認識を行う毎フレームを下げる
+戻ってくる際の2回目のbackが出来ない時が多い5m以内なら一回で戻らせた方がいいかも知れない.
 """
