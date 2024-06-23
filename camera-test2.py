@@ -1,4 +1,5 @@
- # Telloカメラ顔認識サンプルコード2
+ # Telloカメラ顔検出サンプルコード2
+
 import socket
 import time
 import cv2

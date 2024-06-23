@@ -32,10 +32,12 @@ receive()
 
 # 離陸
 send("takeoff")
-time.sleep(7)
+time.sleep(10)
 
-# 上昇
-send("up 60")
+send("up 200")
+time.sleep(10)
+
+send("down 200")
 time.sleep(5)
 
 # 着陸

@@ -1,5 +1,5 @@
-# auto-testとcameraの7割りぐらい完成形
-
+# auto-testとcamera,顔検出
+ 
 import socket
 import time
 import cv2
@@ -81,12 +81,12 @@ send("takeoff")
 time.sleep(7)
 
 send("up 40")
-time.sleep(5)
 
-once_forward = 65   # 一回でどれだけ前進するか
-how_many_forward = 3   # 何回前進するか
+once_forward = 80   # 一回でどれだけ前進するか
+how_many_forward = 6   # 何回前進するか
 angle = 45   # 左右に向く角度
 for i in range(how_many_forward):
+    time.sleep(5)
     if(i == 0):
         send(f"cw {angle}")
         time.sleep(5)
@@ -94,7 +94,6 @@ for i in range(how_many_forward):
         time.sleep(5)
         send(f"cw {angle}")
         time.sleep(5)
-    else: continue    
     send(f"forward {once_forward}")
     time.sleep(5)
     send(f"cw {angle}")
@@ -102,10 +101,9 @@ for i in range(how_many_forward):
     send(f"ccw {angle * 2}")
     time.sleep(5)
     send(f"cw {angle}")
-    time.sleep(5)
 
 # 元の位置に戻る
-time.sleep(5) 
+time.sleep(14) 
 if(once_forward * how_many_forward < 500 ):
     send(f"back {once_forward * how_many_forward}")
 else:
@@ -135,6 +133,6 @@ cv2.destroyAllWindows()
 
 
 """
-遅延が気になるのであれば左右向いたときのsleep時間を多めに取り,1回の顔認識を行う毎フレームを下げる
-戻ってくる際の2回目のbackが出来ない時が多い5m以内なら一回で戻らせた方がいいかも知れない.
+遅延が気になるのであれば左右向いたときのsleep時間(滞在時間)を多めに取り,1回の顔認識を行う毎フレームを下げる
+帰ってくる時が上手くいかない(前のsleep時間を変えたりして改良必要有)
 """
