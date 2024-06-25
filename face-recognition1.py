@@ -29,7 +29,7 @@ def draw_on(img, faces, name):
     return dimg
 
 #画像のパス指定と閾値の設定
-pre_img_path = 'C:\\Users\\daiko\\drone\\img\\kiyoya2.jpg'
+pre_img_path = 'C:\\Users\\daiko\\drone\\img\\kiyoya1.jpg'
 threshold = 0.75
 
 #顔検出のオブジェクトのインスタンス化
