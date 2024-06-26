@@ -89,6 +89,8 @@ for player in tqdm(players):
 if known_embeddings:
     known_embeddings = np.concatenate(known_embeddings, axis=0)   # 特徴量リストを結合
     known_embeddings = np.array(known_embeddings)  # リストからNumPy配列に変換
+else:
+    known_embeddings = np.array([])  # 空の配列で初期化
 
 # ウェブカメラの映像に対して顔認識を実施
 capture = cv2.VideoCapture(0)
@@ -102,7 +104,10 @@ while True:
         unknown_embeddings.append(faces[i].embedding)
 
     # 未知の顔の特徴量を既知の顔の特徴量と比較し、最も類似度の高い名前を判定
-    pred_names = judge_sim(np.array(known_embeddings), known_names, np.array(unknown_embeddings), 0.5)   # 閾値は調整が必要
+    if known_embeddings.size > 0:  # known_embeddingsが空でないか確認
+        pred_names = judge_sim(np.array(known_embeddings), known_names, np.array(unknown_embeddings), 0.5)
+    else:
+        pred_names = ["Unknown"] * len(faces)  # 全てUnknownとして処理
 
     # 検出結果を描画
     detect = draw_on(frame, faces, pred_names)

@@ -1,117 +1,49 @@
-import numpy as np
-import os
-import cv2
-from insightface.app import FaceAnalysis
-from glob import glob
-from tqdm import tqdm
-from collections import defaultdict
+import socket
+import time
 
-# 平均を算出するための関数
-def get_averages(names, scores):
-    d = defaultdict(list)
-    for n, s in zip(names, scores):
-        d[n].append(s)
-    averages = {}
-    for n, s in d.items():
-        averages[n] = np.mean(s)
-    return averages
+# TelloのIPアドレスとポート番号
+TELLO_IP = '192.168.10.1'
+TELLO_PORT = 8889
+TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
 
-# 認証を行うための関数
-def judge_sim(known_embeddings, known_names, unknown_embeddings, threshold):
-    pred_names = []
-    for emb in unknown_embeddings:
-        scores = np.dot(emb, known_embeddings.T)
-        scores = np.clip(scores, 0., None)
-        averages = get_averages(known_names, scores)
-        pred = sorted(averages, key=lambda x: averages[x], reverse=True)[0]
-        score = averages[pred]
-        if score > threshold:
-            pred_names.append(pred)
-        else:
-            pred_names.append("Unknown")
-    return pred_names
+# UDPソケットの作成
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('', 9000))
 
-# バウンディングボックスと名前を描画するための関数
-def draw_on(img, faces, name):
-    dimg = img.copy()
-    for i in range(len(faces)):
-        face = faces[i]
-        box = face.bbox.astype(int)
-        color = (0, 0, 255)
-        cv2.rectangle(dimg, (box[0], box[1]), (box[2], box[3]), color, 2)
-        if face.kps is not None:
-            kps = face.kps.astype(int)
-            for l in range(kps.shape[0]):
-                color = (0, 0, 255)
-                if l == 0 or l == 3:
-                    color = (0, 255, 0)
-                cv2.circle(dimg, (kps[l][0], kps[l][1]), 1, color, 2)
-        cv2.putText(dimg, name[i], (box[0]-1, box[1]-4), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1)
-    return dimg
+def send(message):
+    try:
+        sock.sendto(message.encode(), TELLO_ADDRESS)
+        print(f"Sending message: {message}")
+    except Exception as e:
+        print(f"Error sending message: {e}")
 
-# 名前と特徴量を格納するためのリストの初期化
-known_names = []
-known_embeddings = []
+def receive():
+    try:
+        response, _ = sock.recvfrom(1024)   # response:受信データ , _:送信元アドレス
+        print(f"Received message: {response.decode()}")
+    except Exception as e:
+        print(f"Error receiving message: {e}")
 
-# フォルダの名前を取得
-players = os.listdir('C:\\Users\\daiko\\drone\\img\\peoples_face')
+# SDKモードを開始
+send("command")
+receive()
 
-# 登録写真の顔検出を行うための準備
-app_pre = FaceAnalysis()
-app_pre.prepare(ctx_id=0, det_size=(640, 640))
+# 離陸
+send("takeoff")
+time.sleep(8)
 
-# 認証写真の顔検出を行うための準備
-app = FaceAnalysis()
-app.prepare(ctx_id=0, det_size=(640, 640))
+# 前
+send("forward 100")
+time.sleep(5)
 
-# 登録写真の特徴量の計算
-for player in tqdm(players):
-    player_embeddings, player_names = [], []
-    img_paths = glob(f'C:\\Users\\daiko\\drone\\img\\peoples_face\\{player}\\*')
-    for img_path in img_paths:
-        img = cv2.imread(img_path)
-        if img is None:
-            continue
-        faces = app_pre.get(np.array(img))
-        if len(faces) == 0:
-            continue
-        player_embeddings.append(faces[0].embedding)
-        player_names.append(player)
-        if len(known_embeddings) == 10:
-            break
-    if player_embeddings:
-        player_embeddings = np.stack(player_embeddings, axis=0)
-        known_embeddings.append(player_embeddings)
-        known_names += player_names
-if known_embeddings:
-    known_embeddings = np.concatenate(known_embeddings, axis=0)
+# 回転
+send("cw 180")
+time.sleep(8)
 
-# known_embeddingsが正しく配列になっているか確認
-print(type(known_embeddings), known_embeddings.shape)
+# こっち戻ってくる
+send("forward 100")
+time.sleep(5)
 
-# ウェブカメラの映像に対して顔認識を実施
-capture = cv2.VideoCapture(0)
-while True:
-    ret, frame = capture.read()
-    if not ret:
-        break
-
-    faces = app.get(np.array(frame))
-    unknown_embeddings = []
-    for i in range(len(faces)):
-        unknown_embeddings.append(faces[i].embedding)
-
-    # unknown_embeddingsが正しく配列になっているか確認
-    unknown_embeddings = np.array(unknown_embeddings)
-    print(type(unknown_embeddings), unknown_embeddings.shape)
-
-    pred_names = judge_sim(known_embeddings, known_names, unknown_embeddings, 0.5)  # 閾値は調整が必要
-
-    detect = draw_on(frame, faces, pred_names)
-    cv2.imshow("Face Recognition", detect)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-capture.release()
-cv2.destroyAllWindows()
+# 着陸
+send("land")
+receive()
