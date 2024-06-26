@@ -83,7 +83,7 @@ time.sleep(7)
 send("up 40")
 
 once_forward = 80   # 一回でどれだけ前進するか
-how_many_forward = 6   # 何回前進するか
+how_many_forward = 2   # 何回前進するか
 angle = 45   # 左右に向く角度
 for i in range(how_many_forward):
     time.sleep(5)

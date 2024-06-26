@@ -24,15 +24,15 @@ def draw_on(img, faces, name):
                 if l == 0 or l == 3:
                     color = (0, 255, 0)
                 cv2.circle(dimg, (kps[l][0], kps[l][1]), 1, color, 2)
-        cv2.putText(dimg, name, (box[0]-1, box[1]-4),cv2.FONT_HERSHEY_COMPLEX,1.5,(0,255,0),2)
+        cv2.putText(dimg, name, (box[0]-1, box[1]-4), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 255, 0), 2)
 
     return dimg
 
-#画像のパス指定と閾値の設定
+# 画像のパス指定と閾値の設定
 pre_img_path = 'C:\\Users\\daiko\\drone\\img\\kiyoya3.jpg'
 threshold = 0.75
 
-#顔検出のオブジェクトのインスタンス化
+# 顔検出のオブジェクトのインスタンス化
 app = FaceAnalysis()
 app.prepare(ctx_id=1, det_size=(640, 640))   # GPUを使用する設定, CPUなら-1
 
@@ -46,6 +46,10 @@ pre_embedding = [pre_face[0].embedding]
 known_face_name = ["Unknown", "kiyoya"]
 
 capture = cv2.VideoCapture(0)   # ウェブカメラを起動
+
+# ウィンドウの設定
+cv2.namedWindow("Face", cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty("Face", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 while True:
     ret, flame = capture.read()   # retがFalseならループ終了
@@ -70,3 +74,6 @@ while True:
     # qを押すと終了
     if (cv2.waitKey(1) & 0xFF == ord('q')):
         break
+
+capture.release()
+cv2.destroyAllWindows()
