@@ -10,7 +10,7 @@ import threading
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
-LOCAL_PORT = 9000
+LOCAL_PORT = 9111
 VIDEO_PORT = 11111
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

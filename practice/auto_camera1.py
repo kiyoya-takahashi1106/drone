@@ -1,4 +1,4 @@
-# auto-testとcamera,顔検出
+# auto-testとcamera, 顔検出
  
 import socket
 import time

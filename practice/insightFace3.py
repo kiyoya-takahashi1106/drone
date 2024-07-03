@@ -93,6 +93,7 @@ recognition_enabled = True
 
 # カメラ映像を表示し、顔認識を行う関数
 def receive_video():
+    global recognition_enabled
     container = av.open(f'udp://@0.0.0.0:{VIDEO_PORT}')
     for frame in container.decode(video=0):
         if stop_event.is_set():
@@ -129,7 +130,6 @@ def receive_video():
             stop_event.set()
             break
         elif key == ord('r'):
-            global recognition_enabled
             recognition_enabled = not recognition_enabled
 
     cv2.destroyAllWindows()
