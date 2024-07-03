@@ -1,4 +1,4 @@
-# 一人を顔認識
+# webカメラに映った顔の顔認識
 
 import cv2   # 画像処理と表示
 import numpy as np
@@ -29,7 +29,7 @@ def draw_on(img, faces, name):
     return dimg
 
 # 画像のパス指定と閾値の設定
-pre_img_path = 'C:\\Users\\daiko\\drone\\img\\kiyoya3.jpg'
+pre_img_path = 'C:\\Users\\daiko\\drone\\img\\kiyoya2.jpg'
 threshold = 0.75
 
 # 顔検出のオブジェクトのインスタンス化
@@ -38,6 +38,9 @@ app.prepare(ctx_id=1, det_size=(640, 640))   # GPUを使用する設定, CPUな�
 
 # 登録画像の読み込みと特徴量の抽出
 pre_img = cv2.imread(pre_img_path)
+if pre_img is None:
+    raise ValueError(f"Cannot open or read the image file: {pre_img_path}")
+
 pre_face = app.get(pre_img)   # 特徴量抽出
 if len(pre_face) == 0:
     raise ValueError("No face detected in the preloaded image.")
@@ -52,23 +55,29 @@ cv2.namedWindow("Face", cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty("Face", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 while True:
-    ret, flame = capture.read()   # retがFalseならループ終了
-    if(ret == False):
+    ret, frame = capture.read()   # retがFalseならループ終了
+    if not ret:
         break
+
     # カメラ画像から顔の検出と特徴量の抽出
-    faces = app.get(flame)
-    embeddings = faces[0].embedding   # 検出された顔の特徴量を抽出します。
-
-    # 類似度算出
-    sim = cos_sim(pre_embedding, embeddings)
-    # 閾値を超えた際に、登録された人物であると判定
-    if sim >= threshold:
-        best_name_index = pre_embedding.index(pre_embedding[0]) + 1
+    faces = app.get(frame)
+    if len(faces) == 0:
+        detect = frame
+        name = "Unknown"
     else:
-        best_name_index = 0
+        embeddings = faces[0].embedding   # 検出された顔の特徴量を抽出します。
 
-    # 結果の表示
-    detect = draw_on(flame, faces, known_face_name[best_name_index])
+        # 類似度算出
+        sim = cos_sim(pre_embedding[0], embeddings)
+        # 閾値を超えた際に、登録された人物であると判定
+        if sim >= threshold:
+            name = known_face_name[1]
+        else:
+            name = known_face_name[0]
+
+        # 結果の表示
+        detect = draw_on(frame, faces, name)
+
     cv2.imshow("Face", detect)
 
     # qを押すと終了

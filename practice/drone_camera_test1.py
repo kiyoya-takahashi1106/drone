@@ -1,4 +1,5 @@
 # Telloカメラサンプルコード1
+
 import socket
 import time
 import cv2
