@@ -25,8 +25,8 @@ move_commands = {
 
 # Telloの初期設定
 tello.connect()
-battery = tello.get_battery()
 """
+battery = tello.get_battery()
 if(battery < 30):
     print("充電してください")
 """
@@ -40,22 +40,27 @@ if(N % 2 == 0):
 else:  
     L = N//2 + 1
 copy_N = N
+move_flag = False
 while(i < M):   
     j = 0
     if(i%2 == 0):
         direction = "forward"
     else:
         direction = "back"
-    while(j < N): 
-        move_commands["clockwise"](45)
-        move_commands["counter_clockwise"](90)
-        move_commands["clockwise"](45)
+    while(j < N):
+        move_commands["counter_clockwise"](45)   # 反時計45°→時計90°→反時計45°
+        if(move_flag == True):
+            move_commands["counter"](45)
+        else:
+            move_commands["counter"](90)
+            move_commands["counter_clockwise"](45)
         move_commands[direction](move_lenght_y)
         j += 1
     copy_N -= 2
     if(copy_N >= 2):   
         move_commands["left"](move_lenght_x*2)
-    elif(copy_N == 1):   
+    elif(copy_N == 1): 
+        move_flag = True  
         move_commands["left"](move_lenght_x)
     i += 1
 
