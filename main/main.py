@@ -1,40 +1,65 @@
+# 机の横幅が長くなく,3回の写真でその机に座ってる全員映る前提
+# 充電量から飛ぶか決める機能つける
 # library
-import cv2
+from djitellopy import Tello
 
 # module
-from load_known_faces import load_known_faces
-from faceRecognition import faceRecognition
 
 
+# 定数の初期化
+tello = Tello()
+N = int(input("Q:机が縦に何個置かれてますか？   A:"))
+M = int(input("A:机が横に何個置かれてますか？   A:"))
+move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
+move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
+move_commands = {
+    "forward": tello.move_forward,
+    "back": tello.move_back,
+    "left": tello.move_left,
+    "right": tello.move_right,
+    "up": tello.move_up,
+    "down": tello.move_down,
+    "clockwise":  tello.rotate_clockwise,
+    "counter_clockwise": tello.rotate_counter_clockwise
+}
 
-video_capture = cv2.VideoCapture(0)  # Webカメラをキャプチャ
-known_face_encodings, known_face_names = load_known_faces()
-recognition_active = False  # 顔認識の有効化フラグ
-detected_names_all = []  # これまで顔認識した人の名前を格納するリスト
+# Telloの初期設定
+tello.connect()
+battery = tello.get_battery()
+"""
+if(battery < 30):
+    print("充電してください")
+"""
 
-while True:
-    ret, frame = video_capture.read()
-    if not ret:
-        break
-        
-    if recognition_active:
-        frame, faces_num = faceRecognition(frame, known_face_encodings, known_face_names, detected_names_all)
-        # 検出された顔の数を画面に表示
-        cv2.putText(frame, f"Faces: {faces_num}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+# 動作
+tello.takeoff()
+
+i = 0
+if(N % 2 == 0):
+    L = N//2
+else:  
+    L = N//2 + 1
+copy_N = N
+while(i < M):   
+    j = 0
+    if(i%2 == 0):
+        direction = "forward"
     else:
-        faces_num = 0
+        direction = "back"
+    while(j < N): 
+        move_commands["clockwise"](45)
+        move_commands["counter_clockwise"](90)
+        move_commands["clockwise"](45)
+        move_commands[direction](move_lenght_y)
+        j += 1
+    copy_N -= 2
+    if(copy_N >= 2):   
+        move_commands["left"](move_lenght_x*2)
+    elif(copy_N == 1):   
+        move_commands["left"](move_lenght_x)
+    i += 1
 
-    # 結果を表示する
-    cv2.imshow('WebCam', frame)
-        
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        break
-    elif key == ord('r'):
-        recognition_active = not recognition_active
+tello.land()
 
-video_capture.release()
-cv2.destroyAllWindows()
-print(f"Names of detected individuals: {detected_names_all}")
-print(f"Number of unique individuals detected: {len(detected_names_all)}")
+# Telloの接続切
+tello.end()
