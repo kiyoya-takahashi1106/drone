@@ -51,14 +51,13 @@ while(i < M):
     else:
         direction = "back"
     while(j < N):
-        move_commands["counter_clockwise"](45)  
-        time.sleep(3)
-        if(move_flag == True):
-            move_commands["counter"](45)
+        if(move_flag == False):
+            move_commands["clockwise"](45)  
+            move_commands["counter_clockwise"](90)
+            move_commands["clockwise"](45) 
         else:
-            move_commands["counter"](90)
-            time.sleep(3)
             move_commands["counter_clockwise"](45)
+            move_commands["clockwise"](45)
         time.sleep(3)
         move_commands[direction](move_lenght_y)
         time.sleep(5)
