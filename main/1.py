@@ -1,79 +1,49 @@
-# 机の横幅が長くなく,3回の写真でその机に座ってる全員映る前提
-# 充電量から飛ぶか決める機能つける
-# library
-from djitellopy import Tello
-import time
+# まだ消したらあかん
+import cv2
+import numpy as np
 
-# module
+# 重心を計算する関数
+def find_centroid(binary_image):
+    moments = cv2.moments(binary_image)
+    if moments["m00"] != 0:
+        cx = int(moments["m10"] / moments["m00"])
+        cy = int(moments["m01"] / moments["m00"])
+        return cx, cy
+    return None, None
 
+# サンプル画像を読み込む
+image_path = "../img/whileLine1.jpg"
+image = cv2.imread(image_path)
 
-# 定数の初期化
-tello = Tello()
-N = int(input("Q:机が縦に何個置かれてますか？   A:"))
-M = int(input("A:机が横に何個置かれてますか？   A:"))
-move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
-move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
-move_commands = {
-    "forward": tello.move_forward,
-    "back": tello.move_back,
-    "left": tello.move_left,
-    "right": tello.move_right,
-    "up": tello.move_up,
-    "down": tello.move_down,
-    "clockwise":  tello.rotate_clockwise,
-    "counter_clockwise": tello.rotate_counter_clockwise
-}
+# 画像が正しく読み込まれたか確認
+if image is None:
+    print(f"Error: Unable to open image file at {image_path}")
+    exit(1)
 
-# Telloの初期設定
-tello.connect()
-"""
-battery = tello.get_battery()
-if(battery < 30):
-    print("充電してください")
-"""
+# BGRからHSVに変換
+hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-# 動作
-tello.takeoff()
-time.sleep(5)  # 離陸の安定時間
+# 白色の範囲を定義
+lower_white = np.array([0, 0, 200], dtype=np.uint8)
+upper_white = np.array([180, 50, 255], dtype=np.uint8)
 
-i = 0
-if(N % 2) == 0:
-    L = N // 2
+# 白色のマスクを作成
+mask = cv2.inRange(hsv, lower_white, upper_white)
+
+# マスクを適用して白い部分を抽出
+result = cv2.bitwise_and(image, image, mask=mask)
+
+# マスクを二値化画像として重心を計算
+cx, cy = find_centroid(mask)
+
+# 重心を描画
+if cx is not None and cy is not None:
+    cv2.circle(result, (cx, cy), 5, (0, 255, 0), -1)  # 重心に緑の円を描画
+    print(f"Centroid coordinates: ({cx}, {cy})")
 else:
-    L = N // 2 + 1
-copy_N = N
-move_flag = False
+    print("No centroid found.")
 
-while(i < M):   
-    j = 0
-    if(i % 2 == 0):
-        direction = "forward"
-    else:
-        direction = "back"
-    while(j < N):
-        if(move_flag == False):
-            move_commands["clockwise"](45)  
-            move_commands["counter_clockwise"](90)
-            move_commands["clockwise"](45) 
-        else:
-            move_commands["counter_clockwise"](45)
-            move_commands["clockwise"](45)
-        time.sleep(3)
-        move_commands[direction](move_lenght_y)
-        time.sleep(5)
-        j += 1
-    copy_N -= 2
-    if(copy_N >= 2):   
-        move_commands["left"](move_lenght_x * 2)
-        time.sleep(8)
-    elif(copy_N == 1): 
-        move_flag = True  
-        move_commands["left"](move_lenght_x)
-        time.sleep(5)
-    i += 1
-
-tello.land()
-time.sleep(5)  # 着陸の安定時間
-
-# Telloの接続切
-tello.end()
+# 結果を表示
+cv2.imshow('Extracted White Line with Centroid', result)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
