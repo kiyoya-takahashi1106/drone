@@ -49,17 +49,25 @@ while(i < L):
     j = 0
     while(j < N + 2):
         if(j<N):   # 写真撮りながら, 前進む
-            move_commands["clockwise"](45)
-            time.sleep(3)
-            move_commands["counter_clockwise"](90)
-            time.sleep(5)
-            move_commands["clockwise"](45)
-            time.sleep(3)
-            move_commands["forward"](move_lenght_y)
-            time.sleep(5)
+            if(move_flag == False):
+                move_commands["counter_clockwise"](45)
+                time.sleep(3)
+                move_commands["clockwise"](90)
+                time.sleep(5)
+                move_commands["counter_clockwise"](45)
+                time.sleep(3)
+                move_commands["forward"](move_lenght_y)
+                time.sleep(5)
+            else:
+                move_commands["45"](45)
+                time.sleep(3)
+                move_commands["counter_clockwise"](45)
+                time.sleep(3)
+                move_commands["forward"](move_lenght_y)
+                time.sleep(5)
         elif(N <= j):   # ただ戻ってくるだけ
             if(N == j):
-                move_commands["counter_clockwise"](90)
+                move_commands["counter_clockwise"](180)
                 time.sleep(8)
             move_commands["forward"](move_lenght_y*N / 2)
             time.sleep(8)
