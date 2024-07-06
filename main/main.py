@@ -38,7 +38,7 @@ if(battery < 30):
 """
 
 
-# main
+# 動作
 tello.takeoff()
 time.sleep(5)  # 離陸の安定時間
 
@@ -54,7 +54,6 @@ angle_error_flag = False   # Trueなら角度誤差を修正
 y_error_flag = False   # Trueならy軸誤差を修正
 x_error_flag = False
 sum_y_error = 0
-sum_x_error = 0
 prevDistance = 0
 
 # ストリーミング開始
@@ -65,7 +64,7 @@ while(i < L):
     j = 0
     while(j < N + 2):
         # 制御 & パラメーター更新
-        if(j != 0): 
+        if(i != 0 or j != 0): 
             # 制御計算
             frame = frame = frame_read.frame
             binary_image = threshold(frame)
@@ -102,12 +101,14 @@ while(i < L):
                 if(y_error_flag == True):
                     y = Move_lenght_y + sum_y_error
                     y_error_flag = False
+                    sum_y_error = 0
                 else:
                     y = Move_lenght_y
             elif(N <= j):
                 if(y_error_flag == True):
                     y = Move_lenght_y*N / 2 - sum_y_error
                     y_error_flag = False
+                    sum_y_error = 0
                 else:
                     y = Move_lenght_y*N / 2
             prevDistance = y
@@ -128,11 +129,12 @@ while(i < L):
                 else:
                     x = 0
 
-        # j = 0の時のパラメーター
+        # i,j = 0,0 時の初期パラメーター
         else:
             angle = 45
             y = 90
             x = 0
+
 
         # drone動作
         # 写真撮りながら, forward方向に進む
@@ -192,17 +194,47 @@ while(i < L):
                 elif(0 < x):
                     Move_commands["right"](x)
                 time.sleep(4)
+            
+            # ナチュラル動作
             Move_commands["forward"](y)   # y軸制御
             time.sleep(8)
         j += 1
 
     copy_M -= 2   # 残り何行あるか更新
-    # 90°半時計, まっすぐ, 90°半時計(要するに横移動)
+
+    # 90°半時計, まっすぐ, 90°半時計(要するに横移動) ※まっすぐ移動前に角度,x軸(90°傾いてなかったらy軸)制御
     Move_commands["counter_clockwise"](90)
     time.sleep(5)
+    # 制御計算
+    frame = frame = frame_read.frame
+    binary_image = threshold(frame)
+    cx, cy, m = center_lastSquare(binary_image)
+    angle_error, _, x_error = control(prevDistance, 960, 720, cx, cy, m)
+    
+    # 角度制御
+    angle = angle_error
+    if(angle < 0):
+        angle = -angle
+        Move_commands["counter_clockwise"](angle)
+    elif(0 < angle):
+        Move_commands["clockwise"](angle)
+    time.sleep(3)
+    
+    # x軸制御
+    x = x_error
+    if(x < 0):
+        x = -x
+        Move_commands["left"](x)
+        sum_y_error = 0
+    elif(0 < x):
+        Move_commands["right"](x)
+        sum_y_error = 0
+    time.sleep(3)
+
+    # ナチュラル動作
     if(copy_M >= 2):   
         Move_commands["forward"](Move_lenght_x * 2)
-        time.sleep(6)
+        time.sleep(8)
     elif(copy_M == 1): 
         move_flag = True  
         Move_commands["forward"](Move_lenght_x)
