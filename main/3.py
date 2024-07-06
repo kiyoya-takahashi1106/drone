@@ -1,17 +1,25 @@
-# 消したらあかん
-import numpy as np
+import time
+from djitellopy import Tello
 
-pc_y_error_lst = [4.5, 6.5, 7.5, 8, 8.5, 8.8, 9, 9.2]
-pc_x_error_lst = [2.6, 1.8, 1.4, 1.1, 0.9, 0.8, 0.7, 0.6]
+# djitellopyを使って他の動作を制御
+tello = Tello()
 
-for pc_y_error, pc_x_error in zip(pc_y_error_lst, pc_x_error_lst):
-    cy = pc_y_error * 34 / 45
-    # こっち側から重心までのy(img_height - cy)を入れたら, real/droの画面 比率が分かる.
-    fx = (40 * (1 + np.exp(0.85 * (cy - 5.4)))) / 3.07
+# Telloと接続
+tello.connect()
+time.sleep(3)
 
-    # 重心cxと画面中心のずれ(d)
-    cx_middle_error = pc_x_error * 960 / 1280
+# 離陸コマンドを送信
 
-    # drone画面のx方向のずれを入れたら, 実際のx方向のずれが分かる.
-    x_error = cx_middle_error * fx
-    print(x_error)
+tello.takeoff()
+time.sleep(3)
+
+# 上昇
+tello.move_up(20)
+time.sleep(3)
+
+# 着陸
+tello.land()
+time.sleep(5)
+
+# Telloの接続を終了
+tello.end()
