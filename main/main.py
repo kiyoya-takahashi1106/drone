@@ -39,46 +39,53 @@ time.sleep(5)  # 離陸の安定時間
 
 i = 0
 if(M % 2) == 0:
-    L = M // 2
+    L = M // 2 
 else:
     L = M // 2 + 1
-copy_M = M
-move_flag = False
+copy_M = M   # 残り何行あるか
+move_flag = False   # ラスト1行になったらTrue
 
 while(i < L):   
     j = 0
-    if(i % 2 == 0):
-        direction = "forward"
-    else:
-        direction = "back"
-    while(j < N):
-        if(direction == "back"):   # backの時は動いてから首ふる
-            move_commands[direction](move_lenght_y)
-            time.sleep(5)
-        else:
-            pass
-        if(move_flag == False):
-            move_commands["clockwise"](45)  
-            move_commands["counter_clockwise"](90)
-            move_commands["clockwise"](45) 
-        else:
-            move_commands["counter_clockwise"](45)
-            move_commands["clockwise"](45)
-        time.sleep(3)
-        if(direction == "forward"):   # forwardの時は首ふってから動く
-            move_commands[direction](move_lenght_y)
-            time.sleep(5)
-        else:
-            pass
+    while(j < N + 2):
+        if(j<N):   # 写真撮りながら, 前進む
+            if(move_flag == False):
+                move_commands["counter_clockwise"](45)
+                time.sleep(3)
+                move_commands["clockwise"](90)
+                time.sleep(5)
+                move_commands["counter_clockwise"](45)
+                time.sleep(3)
+                move_commands["forward"](move_lenght_y)
+                time.sleep(5)
+            else:
+                move_commands["45"](45)
+                time.sleep(3)
+                move_commands["counter_clockwise"](45)
+                time.sleep(3)
+                move_commands["forward"](move_lenght_y)
+                time.sleep(5)
+        elif(N <= j):   # ただ戻ってくるだけ
+            if(N == j):
+                move_commands["counter_clockwise"](180)
+                time.sleep(8)
+            move_commands["forward"](move_lenght_y*N / 2)
+            time.sleep(8)
         j += 1
-    copy_M -= 2
+
+    copy_M -= 2   # 残り何行あるか更新
+    # 90°半時計, まっすぐ, 90°半時計(要するに横移動)
+    move_commands["counter_clockwise"](90)
+    time.sleep(5)
     if(copy_M >= 2):   
-        move_commands["left"](move_lenght_x * 2)
-        time.sleep(8)
+        move_commands["forward"](move_lenght_x * 2)
+        time.sleep(6)
     elif(copy_M == 1): 
         move_flag = True  
-        move_commands["left"](move_lenght_x)
-        time.sleep(5)
+        move_commands["forward"](move_lenght_x)
+        time.sleep(6)
+    move_commands["counter_clockwise"](90)
+    time.sleep(5)
     i += 1
 
 tello.land()

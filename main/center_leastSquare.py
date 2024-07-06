@@ -36,5 +36,5 @@ def center_lastSquare(binary_image):
 
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
         m, c = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + c)
-        return (cx, cy), m, c, grouped_x_coords, grouped_y_coords  
-    return (cx, cy), None, None, [], []   # 座標が存在しない場合
+        return (cx, cy), m, c
+    return (cx, cy), None, None   # 座標が存在しない場合
