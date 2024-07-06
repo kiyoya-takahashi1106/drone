@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 # 画像を二値化し
-def threshold_centroid(image):
+def threshold(image):
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
