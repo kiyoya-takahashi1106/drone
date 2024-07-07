@@ -45,10 +45,17 @@ def move(direction, distance):
     
 battery = tello.get_battery()
 print("battery", battery)
-"""
-if(battery < 30):
-    print("充電してください")
-"""
+# if(battery < 30):
+#    print("充電してください")
+
+
+# 関数定義
+def calculate_control():
+    frame = frame_read.frame
+    binary_image = threshold(frame)
+    cx, cy, m = center_lastSquare(binary_image)
+    angle_error, y_error, x_error = control(prevDistance, 960, 720, cx, cy, m)
+    return angle_error, y_error, x_error
 
 
 # 動作
@@ -82,10 +89,7 @@ while(i < L):
         # 制御 & パラメーター更新
         if(i != 0 or j != 0): 
             # 制御計算
-            frame = frame = frame_read.frame
-            binary_image = threshold(frame)
-            cx, cy, m = center_lastSquare(binary_image)
-            angle_error, y_error, x_error = control(prevDistance, 960, 720, cx, cy, m)
+            angle_error, y_error, x_error = calculate_control()
 
             # 角度制御設定
             if(angle_error <= -10  or  10 <= angle_error):   # ☆値は要調整☆
@@ -93,7 +97,7 @@ while(i < L):
             if(j < N):
                 if(angle_error_flag == True):
                     if(move_flag == False):   # angle_errorが-45° ~ 45°の間だけ想定それ以外ならバグる
-                        angle = 45 + angle_error
+                        angle = 45 - angle_error
                     else:
                         angle = 45 + angle_error
                     angle_error_flag = False
@@ -120,17 +124,17 @@ while(i < L):
                     sum_y_error = 0
                 else:
                     y = Move_lenght_y
-            elif(N <= j):
+            elif(N <= j < N+2):
                 if(y_error_flag == True):
-                    y = Move_lenght_y*N / 2 - sum_y_error
+                    y = Move_lenght_y*(N-1) // 2 - sum_y_error
                     y_error_flag = False
                     sum_y_error = 0
                 else:
-                    y = Move_lenght_y*N / 2
+                    y = Move_lenght_y*(N-1) // 2
             prevDistance = y
 
             # x軸制御設定
-            if(x_error < -15  or  15 < x_error):
+            if(x_error < -15  or  15 < x_error):   # ☆値は要調整☆
                 x_error_flag = True
             if(j < N):
                 if(x_error_flag == True):
@@ -150,7 +154,7 @@ while(i < L):
             angle = 45
             y = 90
             x = 0
-
+            prevDistance = y
 
         # drone動作
         # 写真撮りながら, forward方向に進む
@@ -161,33 +165,32 @@ while(i < L):
             else:
                 if(x < 0):
                     x = -x
-                    Move_commands["left"](x)
+                    move("left", x)
                 elif(0 < x):
-                    Move_commands["right"](x)
+                    move("right", x)
                 time.sleep(4)
 
-            # マニュアル動作
+            # マニュアル動作 (首振って前進をN回繰り返す. 最後の一回は首振るだけ)
             if(move_flag == False):   # 通常モード
-                Move_commands["counter_clockwise"](angle)   # 角度制御
+                move("ccw", angle)   # 角度制御
                 time.sleep(4)
-                Move_commands["clockwise"](90)
+                move("cw", 90)
                 time.sleep(5)
-                Move_commands["counter_clockwise"](45)
+                move("ccw", 45)
                 time.sleep(3)
-                Move_commands["forward"](y)   # y軸制御
-                time.sleep(5)
             else:   # ラスト一行
-                Move_commands["clock_wise"](angle)   # 角度制御
+                move("ccw", angle)   # 角度制御
                 time.sleep(4)
-                Move_commands["counter_clockwise"](45)
+                move("ccw", 45)
                 time.sleep(3)
-                Move_commands["forward"](y)   # y軸制御
+            if(j != N-1):
+                move("forward", y)   # y軸制御
                 time.sleep(5)
 
         # 前に戻ってくる(back方向に進む)
         elif(N <= j):   
             if(N == j):   # 初めは180°回転
-                Move_commands["counter_clockwise"](180)
+                move("ccw", 180)
                 time.sleep(8)
             # 角度制御
             if(angle == 0):
@@ -195,67 +198,65 @@ while(i < L):
             else:
                 if(angle < 0):
                     angle = -angle
-                    Move_commands["counter_clockwise"](angle)
+                    move("ccw", angle)
                 elif(0 < angle):
-                    Move_commands["clockwise"](angle)
+                    move("cw", angle)
                 time.sleep(3)
 
             # x軸制御
             if(x == 0):
-                    pass
+                pass
             else:
                 if(x < 0):
                     x = -x
-                    Move_commands["left"](x)
+                    move("left", x)
                 elif(0 < x):
-                    Move_commands["right"](x)
+                    move("right", x)
                 time.sleep(4)
             
             # ナチュラル動作
-            Move_commands["forward"](y)   # y軸制御
+            move("forward", y)   # y軸制御
             time.sleep(8)
         j += 1
 
     copy_M -= 2   # 残り何行あるか更新
 
     # 90°半時計, まっすぐ, 90°半時計(要するに横移動) ※まっすぐ移動前に角度,x軸(90°傾いてなかったらy軸)制御
-    Move_commands["counter_clockwise"](90)
+    move("ccw", 90)
     time.sleep(5)
+
     # 制御計算
-    frame = frame = frame_read.frame
-    binary_image = threshold(frame)
-    cx, cy, m = center_lastSquare(binary_image)
-    angle_error, _, x_error = control(prevDistance, 960, 720, cx, cy, m)
+    angle_error, y_error, x_error = calculate_control()
     
     # 角度制御
     angle = angle_error
     if(angle < 0):
         angle = -angle
-        Move_commands["counter_clockwise"](angle)
+        move("ccw", angle)
     elif(0 < angle):
-        Move_commands["clockwise"](angle)
+        move("cw", angle)
     time.sleep(3)
     
-    # x軸制御
+    # x軸制御(実際はy制御)
     x = x_error
     if(x < 0):
         x = -x
-        Move_commands["left"](x)
+        move("left", x)
         sum_y_error = 0
     elif(0 < x):
-        Move_commands["right"](x)
+        move("right", x)
         sum_y_error = 0
     time.sleep(3)
 
     # ナチュラル動作
     if(copy_M >= 2):   
-        Move_commands["forward"](Move_lenght_x * 2)
+        move("forward", Move_lenght_x * 2)
         time.sleep(8)
     elif(copy_M == 1): 
         move_flag = True  
-        Move_commands["forward"](Move_lenght_x)
+        move("forward", Move_lenght_x)
         time.sleep(6)
-    Move_commands["counter_clockwise"](90)
+    move("ccw", 90)
     time.sleep(5)
     i += 1
 
