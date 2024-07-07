@@ -1,23 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{
+      height: '932px',
+      width: '430px',
+      display: 'flex',
+      justifyContent: 'center', // 横方向の中央に配置
+      alignItems: 'center', // 縦方向の中央に配置
+      background: 'white'
+    }}>
+      <div style={{
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column', // 子要素を縦並びに
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div style={{ fontSize: '20px' }}>auto</div>
+        <div style={{ fontSize: '30px' }}>Tello</div>
+      </div>
     </div>
   );
 }
