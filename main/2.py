@@ -22,8 +22,8 @@ def receive():
     except Exception as e:
         print(f"Error receiving message: {e}")
 
-def move_forward(distance):
-    send(f"up {distance}")
+def move(direction, distance):
+    send(f"{direction} {distance}")
     receive()
 
 # コマンドモードに入る
@@ -36,8 +36,7 @@ receive()
 time.sleep(5)
 
 # 動的な距離入力
-distance = 50
-move_forward(distance)
+move("forward", 50)
 time.sleep(5)
 
 # 着陸
