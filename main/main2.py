@@ -62,18 +62,9 @@ move_flag = False   # ラスト1行になったらTrue
 
 while(i < L):   
     j = 0
-    while(j < N + 1):
-        if(j < N - 1):   # 写真撮りながら, 前進む
+    while(j < N + 2):
+        if(j < N):   # 写真撮りながら, 前進む
             if(move_flag == False):
-                if(j == 0):
-                    move("ccw", 45)
-                    time.sleep(3)
-                    move("cw", 90)
-                    time.sleep(5)
-                    move("ccw", 45)
-                    time.sleep(3)
-                move("forward", move_lenght_y)
-                time.sleep(5)
                 move("ccw", 45)
                 time.sleep(3)
                 move("cw", 90)
@@ -81,19 +72,17 @@ while(i < L):
                 move("ccw", 45)
                 time.sleep(3)
             else:   # 残り一行なら
-                if(j == 0):
-                    move("cw", 45)
-                    time.sleep(3)
-                    move("ccw", 45)
-                    time.sleep(3)
-                move("forward", move_lenght_y)
-                time.sleep(5)
                 move("cw", 45)
                 time.sleep(3)
                 move("ccw", 45)
                 time.sleep(3)
-        elif(N-1 <= j < N+1):   # ただ戻ってくるだけ
-            if(j == N-1):
+            if(j != N-1):
+                move("forward", move_lenght_y)
+                time.sleep(5)
+            else:
+                pass
+        elif(N <= j < N+2):   # ただ戻ってくるだけ
+            if(j == N):
                 move("ccw", 180)
                 time.sleep(8)
             move("forward", move_lenght_y*(N-1) / 2)
