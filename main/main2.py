@@ -96,7 +96,7 @@ while(i < L):
             if(j == N-1):
                 move("ccw", 180)
                 time.sleep(8)
-            move("forward", move_lenght_y*N / 2)
+            move("forward", move_lenght_y*(N-1) / 2)
             time.sleep(8)
         j += 1
 
