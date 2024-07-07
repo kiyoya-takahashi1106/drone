@@ -16,16 +16,6 @@ N = int(input("Q:机が縦に何個置かれてますか？   A:"))
 M = int(input("A:机が横に何個置かれてますか？   A:"))
 move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
 move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
-move_commands = {
-    "forward": tello.move_forward,
-    "back": tello.move_back,
-    "left": tello.move_left,
-    "right": tello.move_right,
-    "up": tello.move_up,
-    "down": tello.move_down,
-    "clockwise":  tello.rotate_clockwise,
-    "counter_clockwise": tello.rotate_counter_clockwise
-}
 
 
 # Drone設定
@@ -50,8 +40,6 @@ def move(direction, distance_angle):
     send(f"{direction} {distance_angle}")
     receive()
 
-battery = tello.get_battery()
-print("battery", battery)
 """
 if(battery < 30):
     print("充電してください")
@@ -62,7 +50,7 @@ send("command")
 receive()
 
 send("takeoff")
-time.sleep(3)  # 離陸の安定時間
+time.sleep(5)  # 離陸の安定時間
 
 i = 0
 if(M % 2) == 0:
@@ -74,25 +62,37 @@ move_flag = False   # ラスト1行になったらTrue
 
 while(i < L):   
     j = 0
-    while(j < N + 2):
-        if(j<N):   # 写真撮りながら, 前進む
+    while(j < N + 1):
+        if(j < N - 1):   # 写真撮りながら, 前進む
             if(move_flag == False):
+                if(j == 0):
+                    move("ccw", 45)
+                    time.sleep(3)
+                    move("cw", 90)
+                    time.sleep(5)
+                    move("ccw", 45)
+                    time.sleep(3)
+                move("forward", move_lenght_y)
+                time.sleep(5)
                 move("ccw", 45)
                 time.sleep(3)
                 move("cw", 90)
                 time.sleep(5)
                 move("ccw", 45)
                 time.sleep(3)
+            else:   # 残り一行なら
+                if(j == 0):
+                    move("cw", 45)
+                    time.sleep(3)
+                    move("ccw", 45)
+                    time.sleep(3)
                 move("forward", move_lenght_y)
                 time.sleep(5)
-            else:
                 move("cw", 45)
                 time.sleep(3)
                 move("ccw", 45)
                 time.sleep(3)
-                move("forward", move_lenght_y)
-                time.sleep(5)
-        elif(N <= j):   # ただ戻ってくるだけ
+        elif(N-1 <= j < N+1):   # ただ戻ってくるだけ
             if(N == j):
                 move("ccw", 180)
                 time.sleep(8)
@@ -102,17 +102,23 @@ while(i < L):
 
     copy_M -= 2   # 残り何行あるか更新
     # 90°半時計, まっすぐ, 90°半時計(要するに横移動)
-    move("ccw", 90)
-    time.sleep(5)
     if(copy_M >= 2):   
+        move("ccw", 90)
+        time.sleep(5)
+        print("横横")
         move("forward", move_lenght_x * 2)
         time.sleep(6)
+        move("ccw", 90)
+        time.sleep(5)
     elif(copy_M == 1): 
         move_flag = True  
+        move("ccw", 90)
+        time.sleep(5)
+        print("横横")
         move("forward", move_lenght_x)
         time.sleep(6)
-    move("ccw", 90)
-    time.sleep(5)
+        move("ccw", 90)
+        time.sleep(5)
     i += 1
 
 send("land")
