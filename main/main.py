@@ -1,7 +1,7 @@
 # 机の横幅が長くなく,3回の写真でその机に座ってる全員映る前提
 # 充電量から飛ぶか決める機能つける
 # library
-from djitellopy import Tello
+import socket
 import time
 
 # module
@@ -11,26 +11,33 @@ from control import control
 
 
 # 定数の初期化
-tello = Tello()
+# TelloのIPアドレスとポート番号
+TELLO_IP = '192.168.10.1'
+TELLO_PORT = 8889
+TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
 N = int(input("Q:机が縦に何個置かれてますか？   A:"))
 M = int(input("A:机が横に何個置かれてますか？   A:"))
 Move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
 Move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
-Move_commands = {
-    "forward": tello.move_forward,
-    "back": tello.move_back,
-    "left": tello.move_left,
-    "right": tello.move_right,
-    "up": tello.move_up,
-    "down": tello.move_down,
-    "clockwise":  tello.rotate_clockwise,
-    "counter_clockwise": tello.rotate_counter_clockwise
-}
 
 
-# Telloの初期設定
-tello.connect()
-time.sleep(3)
+# UDPソケットの作成
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('', 9000))
+
+def send(message):
+    try:
+        sock.sendto(message.encode(), TELLO_ADDRESS)
+        print(f"Sending message: {message}")
+    except Exception as e:
+        print(f"Error sending message: {e}")
+
+def receive():
+    try:
+        response, _ = sock.recvfrom(1024)   # response:受信データ , _:送信元アドレス
+        print(f"Received message: {response.decode()}")
+    except Exception as e:
+        print(f"Error receiving message: {e}")
 """
 battery = tello.get_battery()
 if(battery < 30):
@@ -39,7 +46,10 @@ if(battery < 30):
 
 
 # 動作
-tello.takeoff()
+send("command")
+receive()
+
+send("takeoff")
 time.sleep(5)  # 離陸の安定時間
 
 # パラメーター初期化
