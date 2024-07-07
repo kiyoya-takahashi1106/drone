@@ -1,6 +1,7 @@
 # 机の横幅が長くなく,3回の写真でその机に座ってる全員映る前提
 # 充電量から飛ぶか決める機能つける
 # library
+import cv2
 import socket
 import time
 
@@ -15,6 +16,8 @@ from control import control
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
+STREAM_URL = 'udp://0.0.0.0:11111'
+# パラメーター入力
 N = int(input("Q:机が縦に何個置かれてますか？   A:"))
 M = int(input("A:机が横に何個置かれてますか？   A:"))
 Move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
@@ -42,16 +45,26 @@ def receive():
 def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
-    
-battery = tello.get_battery()
+
+# バッテリー残量を確認
+send("battery?")
+battery = receive()
 print("battery", battery)
 # if(battery < 30):
 #   print("充電してください")
 
+# カメラ設定
+send("streamon")
+receive()
+time.sleep(2)
+
+# OpenCVを使ってストリームを取得
+cap = cv2.VideoCapture(STREAM_URL)
+
 
 # 関数定義
 def calculate_control():
-    frame = frame_read.frame
+    _, frame = cap.read()
     binary_image = threshold(frame)
     cx, cy, m = center_lastSquare(binary_image)
     angle_error, y_error, x_error = control(prevDistance, 960, 720, cx, cy, m)
@@ -78,10 +91,6 @@ y_error_flag = False   # Trueならy軸誤差を修正
 x_error_flag = False
 sum_y_error = 0
 prevDistance = 0
-
-# ストリーミング開始
-tello.streamon()
-frame_read = tello.get_frame_read()
 
 while(i < L):   
     j = 0
@@ -269,8 +278,17 @@ while(i < L):
     time.sleep(5)
     i += 1
 
-tello.land()
-time.sleep(5)  # 着陸の安定時間
+# 着陸
+send("land")
+receive()
 
-# Telloの接続切
-tello.end()
+# ストリームを停止
+send("streamoff")
+receive()
+
+# OpenCVを終了
+cap.release()
+cv2.destroyAllWindows()
+
+# ソケットを閉じる
+sock.close()
