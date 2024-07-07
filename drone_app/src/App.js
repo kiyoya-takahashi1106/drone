@@ -3,8 +3,8 @@ import React from 'react';
 function App() {
   return (
     <div style={{
-      height: '932px',
-      width: '430px',
+      height: '840px',
+      width: '390px',
       display: 'flex',
       justifyContent: 'center', // 横方向の中央に配置
       alignItems: 'center', // 縦方向の中央に配置

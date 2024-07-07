@@ -46,7 +46,7 @@ def move(direction, distance):
 battery = tello.get_battery()
 print("battery", battery)
 # if(battery < 30):
-#    print("充電してください")
+#   print("充電してください")
 
 
 # 関数定義
@@ -87,16 +87,16 @@ while(i < L):
     j = 0
     while(j < N + 2):
         # 制御 & パラメーター更新
-        if(i != 0 or j != 0): 
+        if(j != 0): 
             # 制御計算
             angle_error, y_error, x_error = calculate_control()
 
-            # 角度制御設定
+            # 角度制御設定 
             if(angle_error <= -10  or  10 <= angle_error):   # ☆値は要調整☆
                 angle_error_flag = True
             if(j < N):
                 if(angle_error_flag == True):
-                    if(move_flag == False):   # angle_errorが-45° ~ 45°の間だけ想定それ以外ならバグる
+                    if(move_flag == False):   # angle_errorが-45° ~ 45°の間だけ想定. それ以外ならバグる
                         angle = 45 - angle_error
                     else:
                         angle = 45 + angle_error
@@ -113,8 +113,11 @@ while(i < L):
             # y軸制御設定
             if(j < N):
                 sum_y_error += y_error
-            elif(N <= j):
-                sum_y_error -= y_error
+            elif(N <= j < N+2):
+                if(N == j):
+                    first_half_y_error = sum_y_error   # j < Nの範囲の誤差を取り入れてマニュアル(137行目)の動く量を決める
+                    sum_y_error = 0
+                sum_y_error += y_error
             if(sum_y_error <= -15  or  15 <= sum_y_error):   # ☆☆値は要調整☆☆
                 y_error_flag = True
             if(j < N):
@@ -125,12 +128,13 @@ while(i < L):
                 else:
                     y = Move_lenght_y
             elif(N <= j < N+2):
-                if(y_error_flag == True):
-                    y = Move_lenght_y*(N-1) // 2 - sum_y_error
-                    y_error_flag = False
-                    sum_y_error = 0
-                else:
-                    y = Move_lenght_y*(N-1) // 2
+                if(j == N+1):
+                    if(y_error_flag == True):
+                        y = (Move_lenght_y*(N-1) - first_half_y_error) // 2 + sum_y_error   
+                        y_error_flag = False
+                        sum_y_error = 0
+                else:   # j == Nの時は確定でこっち
+                    y = (Move_lenght_y*(N-1) - first_half_y_error) // 2
             prevDistance = y
 
             # x軸制御設定
@@ -142,14 +146,14 @@ while(i < L):
                     x_error_flag = False
                 else:
                     x = 0
-            elif(N <= j):
+            elif(N <= j < N+2):
                 if(x_error_flag == True):
                     x = -x_error
                     x_error_flag = False
                 else:
                     x = 0
 
-        # i,j = 0,0 時の初期パラメーター
+        # j = 0 時の初期パラメーター
         else:
             angle = 45
             y = 90
@@ -186,34 +190,38 @@ while(i < L):
             if(j != N-1):
                 move("forward", y)   # y軸制御
                 time.sleep(5)
+            else:
+                pass
 
-        # 前に戻ってくる(back方向に進む)
-        elif(N <= j):   
+        # 前に戻ってくる(back方向に進む), 制御は2回目戻る時だけ(1回目はしない)
+        elif(N <= j < N+2):   
             if(N == j):   # 初めは180°回転
                 move("ccw", 180)
-                time.sleep(8)
-            # 角度制御
-            if(angle == 0):
-                pass
-            else:
-                if(angle < 0):
-                    angle = -angle
-                    move("ccw", angle)
-                elif(0 < angle):
-                    move("cw", angle)
-                time.sleep(3)
+                time.sleep(6)
 
-            # x軸制御
-            if(x == 0):
-                pass
-            else:
-                if(x < 0):
-                    x = -x
-                    move("left", x)
-                elif(0 < x):
-                    move("right", x)
-                time.sleep(4)
-            
+            if(N == N+1):
+                # 角度制御
+                if(angle == 0):
+                    pass
+                else:
+                    if(angle < 0):
+                        angle = -angle
+                        move("ccw", angle)
+                    elif(0 < angle):
+                        move("cw", angle)
+                    time.sleep(3)
+                
+                # x軸制御
+                if(x == 0):
+                    pass
+                else:
+                    if(x < 0):
+                        x = -x
+                        move("right", x)
+                    elif(0 < x):
+                        move("left", x)
+                    time.sleep(4)
+
             # ナチュラル動作
             move("forward", y)   # y軸制御
             time.sleep(8)
@@ -223,7 +231,7 @@ while(i < L):
 
     # 90°半時計, まっすぐ, 90°半時計(要するに横移動) ※まっすぐ移動前に角度,x軸(90°傾いてなかったらy軸)制御
     move("ccw", 90)
-    time.sleep(5)
+    time.sleep(4)
 
     # 制御計算
     angle_error, y_error, x_error = calculate_control()
