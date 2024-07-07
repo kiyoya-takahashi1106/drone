@@ -8,7 +8,6 @@ TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('', 9000))
 
-
 def send(message):
     try:
         sock.sendto(message.encode(), TELLO_ADDRESS)
@@ -23,17 +22,25 @@ def receive():
     except Exception as e:
         print(f"Error receiving message: {e}")
 
+def move_forward(distance):
+    send(f"up {distance}")
+    receive()
 
+# コマンドモードに入る
 send("command")
 receive()
 
+# 離陸
 send("takeoff")
+receive()
 time.sleep(5)
 
+# 動的な距離入力
 distance = 50
-send(f"up {distance}")
+move_forward(distance)
 time.sleep(5)
 
+# 着陸
 send("land")
 receive()
 
