@@ -183,7 +183,7 @@ while(i < L):
                 move("ccw", 45)
                 time.sleep(3)
             else:   # ラスト一行
-                move("ccw", angle)   # 角度制御
+                move("cw", angle)   # 角度制御
                 time.sleep(4)
                 move("ccw", 45)
                 time.sleep(3)
@@ -199,6 +199,7 @@ while(i < L):
                 move("ccw", 180)
                 time.sleep(6)
 
+            # 角度 & x軸制御
             if(N == N+1):
                 # 角度制御
                 if(angle == 0):
