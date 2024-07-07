@@ -21,7 +21,7 @@ Move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
 Move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
 
 
-# UDPソケットの作成
+# Drone設定
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('', 9000))
 
@@ -38,8 +38,14 @@ def receive():
         print(f"Received message: {response.decode()}")
     except Exception as e:
         print(f"Error receiving message: {e}")
-"""
+
+def move(direction, distance):
+    send(f"{direction} {distance}")
+    receive()
+    
 battery = tello.get_battery()
+print("battery", battery)
+"""
 if(battery < 30):
     print("充電してください")
 """
