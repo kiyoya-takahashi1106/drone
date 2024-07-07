@@ -50,7 +50,7 @@ send("command")
 receive()
 
 send("takeoff")
-time.sleep(5)  # 離陸の安定時間
+time.sleep(6)  # 離陸の安定時間
 
 i = 0
 if(M % 2) == 0:
@@ -93,7 +93,7 @@ while(i < L):
                 move("ccw", 45)
                 time.sleep(3)
         elif(N-1 <= j < N+1):   # ただ戻ってくるだけ
-            if(N == j):
+            if(j == N-1):
                 move("ccw", 180)
                 time.sleep(8)
             move("forward", move_lenght_y*N / 2)
