@@ -127,7 +127,7 @@ while(i < L):
                     first_half_y_error = sum_y_error   # j < Nの範囲の誤差を取り入れてマニュアル(137行目)の動く量を決める
                     sum_y_error = 0
                 sum_y_error += y_error
-            if(sum_y_error <= -15  or  15 <= sum_y_error):   # ☆☆値は要調整☆☆
+            if(sum_y_error <= -20  or  20 <= sum_y_error):   # ☆☆値は要調整☆☆
                 y_error_flag = True
             if(j < N):
                 if(y_error_flag == True):

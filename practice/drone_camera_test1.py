@@ -11,8 +11,8 @@ import threading
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
-LOCAL_PORT = 9001
-VIDEO_PORT = 11112
+LOCAL_PORT = 9000
+VIDEO_PORT = 11111
 
 # UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -47,21 +47,13 @@ def receive_video():
             break
         image = cv2.cvtColor(np.array(frame.to_image()), cv2.COLOR_RGB2BGR)
         
-        # フレームスキップ
-        if frame_skip % 10 == 0:  # Xフレームごとに顔検出を行う
-            # グレースケールに変換
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            # 顔検出
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-            # 検出された顔に矩形を描画
-            for (x, y, w, h) in faces:
-                cv2.rectangle(image, (x, y), (x+w, y+h), (255, 0, 0), 2)
-        
         frame_skip += 1
         cv2.imshow('Tello', image)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             stop_event.set()
             break
+        if cv2.waitKey(1) & 0xFF == ord('w'):
+            cv2.imwrite("picture.png", image)
     cv2.destroyAllWindows()
 
 # 別スレッドでビデオストリームを受信

@@ -4,6 +4,7 @@
 import cv2
 import math
 import numpy as np
+import threading
 import time
 import socket
 
@@ -15,7 +16,7 @@ STREAM_URL = 'udp://0.0.0.0:11111'
 
 # UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', 9000))
+sock.bind(('', 9001))
 
 def send(message):
     try:
@@ -35,49 +36,34 @@ def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
 
-# カメラ設定
-send("streamon")
-receive()
-time.sleep(2)
 
-# OpenCVを使ってストリームを取得
-cap = cv2.VideoCapture(STREAM_URL)
+def threshold(image_path):
+    # 画像を読み込む
+    image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at {image_path}")
 
-
-# 制御関数定義
-def threshold(image):
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # 白色の範囲を定義
-    lower_white = np.array([0, 0, 200], dtype=np.uint8)
-    upper_white = np.array([180, 50, 255], dtype=np.uint8)
+    # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
+    lower_red1 = np.array([0, 50, 50], dtype=np.uint8)
+    upper_red1 = np.array([10, 255, 255], dtype=np.uint8)
+    lower_red2 = np.array([170, 50, 50], dtype=np.uint8)
+    upper_red2 = np.array([180, 255, 255], dtype=np.uint8)
 
-    # 白色のマスクを作成
-    mask = cv2.inRange(hsv, lower_white, upper_white)
+    # 赤色のマスクを作成
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    mask = cv2.bitwise_or(mask1, mask2)
 
-    # マスクを適用して白い部分を抽出
+    # マスクを適用して赤い部分を抽出
     result = cv2.bitwise_and(image, image, mask=mask)
 
-    # グレースケールに変換して二値化
-    gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-    _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+    return result
 
-    return binary
-
-
-def center_lastSquare(binary_image):
-    # 重心計算
-    moments = cv2.moments(binary_image)   # モーメントを計算
-    if moments["m00"] != 0:   # 重心が存在するか確認
-        cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
-        cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
-    else:
-        cx, cy = None, None   # 重心が存在しない場合
-    
-
-    # 最小二乗法
-    # 白色のピクセル座標を取得(y,x_coordsは配列)
+def fit_line_least_squares(binary_image):
+    # 白色のピクセル座標を取得
     y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
     print("y_coords", y_coords)
     print("x_coords", x_coords)
@@ -100,31 +86,59 @@ def center_lastSquare(binary_image):
 
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
         m, c = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + c)
-        return cx, cy, m
-    return cx, cy, None   # 座標が存在しない場合
+        m = -m
+        return m, c
+    return None, None
 
+def process_image(image_path):
+    global m, c, binary_image
+    # 赤色のピクセルを抽出して2値化
+    red_image = threshold(image_path)
+    gray_image = cv2.cvtColor(red_image, cv2.COLOR_BGR2GRAY)
+    _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
 
-def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行動の進んだ距離, 重心x座標, 重心y座標, 画像の幅, 画像の高さ, 傾き
-    # 今の角度から垂直にする角度
-    tan_theta = 1 / m
-    radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
-    angle_error = np.degrees(radians_error)   # ラジアンを度に変換
+    # 最小二乗法で直線フィット
+    m, c = fit_line_least_squares(binary_image)
+    if m is not None and c is not None:
+        print(f"Fitted line: y = {m}x")
+        tan_theta = 1 / m
+        radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
+        angle_error = np.degrees(radians_error)   # ラジアンを度に変換
+        print(angle_error)
+        angle_error = int(angle_error)
+        if(angle_error < 0):
+            move("ccw", -angle_error)
+            time.sleep(3)
+        else:
+            move("cw", angle_error)
+            time.sleep(3)
+        print(100 * math.cos(radians_error))
+        y = 100 - 100 * math.cos(radians_error)
+        y = int(y)
+        move("forward", y)
+        time.sleep(3)
 
-    # y方向のずれ
-    y_error = prevDistance - prevDistance * math.cos(radians_error)
+def visualize():
+    global m, c, image_path, binary_image
+    while True:
+        image = cv2.imread(image_path)
+        if m is not None and c is not None:
+            x_vals = np.array([0, image.shape[1]])
+            y_vals = m * x_vals + c
+            y_vals = y_vals.astype(int)
+            image = cv2.cvtColor(binary_image, cv2.COLOR_GRAY2BGR)
+            cv2.line(image, (x_vals[0], y_vals[0]), (x_vals[1], y_vals[1]), (0, 255, 0), 2)
 
-    # x方向のずれ
-    # こっち側から重心までのy(img_height - cy)を入れたら, real/droの画面 比率が分かる.
-    fx = (40 * (1 + np.exp(0.85 * (img_height - cy - 5.4)))) / 3.07
+        cv2.imshow('Visualization', image)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-    # 重心cxと画面中心のずれ(d)
-    cx_middle_error = img_width//2 - cx
+    cv2.destroyAllWindows()
 
-    # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
-    x_error = cx_middle_error * fx
-
-    return angle_error, y_error, x_error
-
+# グローバル変数
+m, c = None, None
+binary_image = None
+image_path = r'C:\Users\daiko\drone\img\redLine4.jpg'
 
 # SDKモードを開始
 send("command")
@@ -132,33 +146,23 @@ receive()
 
 # 離陸
 send("takeoff")
+time.sleep(8)
+
+send("forward 100")
 time.sleep(5)
 
-_, frame = cap.read()
-cv2.imshow('Captured Frame', frame)
-cv2.waitKey('q')  # キー入力を待つ
-cv2.destroyAllWindows()
 
-binary_image = threshold(frame)
-cx, cy, m = center_lastSquare(binary_image)
-angle_error, y_error, _ = control(100, 960, 720, cx, cy, m)
-angle = angle_error
-y = y_error
+# 画像処理スレッドを開始
+processing_thread = threading.Thread(target=process_image, args=(image_path,))
+processing_thread.start()
 
-# 前進
-move("forward", 100)
+# 可視化スレッドを開始
+visualization_thread = threading.Thread(target=visualize)
+visualization_thread.start()
 
-# 角度制御
-if(angle < 0):
-    angle = -angle
-    move("ccw", angle)
-    print(f"ccw {angle}")
-elif(angle <= 0):
-    move("cw", angle)
-    print(f"cw {angle}")
-
-# y軸制御
-move("forward", y)
+# スレッドの終了を待機
+processing_thread.join()
+visualization_thread.join()
 
 # 着陸
 send("land")

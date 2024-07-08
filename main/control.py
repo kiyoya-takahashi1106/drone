@@ -7,9 +7,11 @@ def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行
     tan_theta = 1 / m
     radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
     angle_error = np.degrees(radians_error)   # ラジアンを度に変換
+    angle_error = int(angle_error)
 
     # y方向のずれ
     y_error = prevDistance - prevDistance * math.cos(radians_error)
+    y_error = int(y_error)
 
     # x方向のずれ
     # こっち側から重心までのy(img_height - cy)を入れたら, real/droの画面 比率が分かる.
@@ -20,5 +22,6 @@ def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行
 
     # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
     x_error = cx_middle_error * fx
+    x_error = int(x_error)
 
     return angle_error, y_error, x_error
