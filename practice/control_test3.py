@@ -1,5 +1,5 @@
 # 角度制御test
-# 赤線に対してある程度傾けて置く
+# 赤線に対してある程度x軸にずれるように置いとく
 
 import cv2
 import math
@@ -34,6 +34,14 @@ def receive():
 def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
+
+# カメラ設定
+send("streamon")
+receive()
+time.sleep(2)
+
+# OpenCVを使ってストリームを取得
+cap = cv2.VideoCapture(STREAM_URL)
 
 
 # 制御関数定義
@@ -122,14 +130,6 @@ def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行
 send("command")
 receive()
 
-# カメラ設定
-send("streamon")
-receive()
-time.sleep(2)
-
-# OpenCVを使ってストリームを取得
-cap = cv2.VideoCapture(STREAM_URL)
-
 # 離陸
 send("takeoff")
 time.sleep(5)
@@ -141,17 +141,17 @@ cv2.destroyAllWindows()
 
 binary_image = threshold(frame)
 cx, cy, m = center_lastSquare(binary_image)
-angle_error, _, _ = control(30, 960, 720, cx, cy, m)
-angle = angle_error
+_, _, x_error = control(30, 960, 720, cx, cy, m)
+x = x_error
 
-# 角度制御
-if(angle < 0):
-    angle = -angle
-    move("ccw", angle)
-    print(f"ccw {angle}")
-elif(angle <= 0):
-    move("cw", angle)
-    print(f"cw {angle}")
+# x軸制御
+if(x < 0):
+    x = -x
+    move("left", x)
+    print(f"left {x}")
+elif(x <= 0):
+    move("right", x)
+    print(f"right {x}")
 
 # 着陸
 send("land")
@@ -159,7 +159,3 @@ receive()
 
 # ソケットを閉じる
 sock.close()
-
-# OpenCVを終了
-cap.release()
-cv2.destroyAllWindows()
