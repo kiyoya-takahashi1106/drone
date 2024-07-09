@@ -18,4 +18,4 @@
 7/06 [main.pyのバグ修正. main.pyに角度,y軸,x軸制御をdroneの動きに取り入れた.(検証は出来ていない) djitellopyを使うとdroneとpcの接続の際よくエラーが出るので接続の際はsocketを使う事にした.]
 7/06 [制御実装前のmain.py(main.py2)のバグ修正とsocketへの変更. main2.pyのバグ修正とsocketへの変更に伴いmain.pyを修正. 資料を作るためのDroneの動きと制御タイミングの解説, 角度,y軸制御仕組みを書く]
 7/08 [資料を作るためのx軸の仕組みを書く. 角度,y軸制御,x軸の試しと修正. control.pyで使うfxの見直しと修正.]
-7/09 [x軸制御試しの続き, 線以外の赤色も取得していたからマスクの範囲をしぼめた. ]
+7/09 [x軸制御試しの続き, 線以外の赤色も取得していたからマスクの範囲をしぼめた. Drone_appの作成(LeftHeader.jsx, TopHeader.jsx, Desk.jsx, Home.jsx, Loading.jsx作成,  react-roter設定)]
