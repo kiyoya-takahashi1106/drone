@@ -4,7 +4,6 @@
 import cv2
 import math
 import numpy as np
-import threading
 import time
 import socket
 
@@ -12,7 +11,6 @@ import socket
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
-STREAM_URL = 'udp://0.0.0.0:11111'
 
 # UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,7 +33,6 @@ def receive():
 def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
-
 
 def threshold(image_path):
     # 画像を読み込む
@@ -60,9 +57,12 @@ def threshold(image_path):
     # マスクを適用して赤い部分を抽出
     result = cv2.bitwise_and(image, image, mask=mask)
 
-    return result
+    gray_image = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+    _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
 
-def fit_line_least_squares(binary_image):
+    return binary_image
+
+def center_leastSquare(binary_image):
     # 白色のピクセル座標を取得
     y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
     print("y_coords", y_coords)
@@ -85,21 +85,19 @@ def fit_line_least_squares(binary_image):
         print("grouped_x_coords", grouped_x_coords)
 
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
-        m, c = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + c)
+        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + _)
         m = -m
-        return m, c
-    return None, None
+        return m
+    return None
 
 def process_image(image_path):
-    global m, c, binary_image
+    global m, binary_image
     # 赤色のピクセルを抽出して2値化
-    red_image = threshold(image_path)
-    gray_image = cv2.cvtColor(red_image, cv2.COLOR_BGR2GRAY)
-    _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
+    binary_image = threshold(image_path)
 
     # 最小二乗法で直線フィット
-    m, c = fit_line_least_squares(binary_image)
-    if m is not None and c is not None:
+    m, c = center_leastSquare(binary_image)
+    if (m is not None):
         print(f"Fitted line: y = {m}x")
         tan_theta = 1 / m
         radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
@@ -108,35 +106,16 @@ def process_image(image_path):
         angle_error = int(angle_error)
         if(angle_error < 0):
             move("ccw", -angle_error)
-            time.sleep(3)
         else:
             move("cw", angle_error)
-            time.sleep(3)
-        print(100 * math.cos(radians_error))
+        time.sleep(5)
         y = 100 - 100 * math.cos(radians_error)
         y = int(y)
         move("forward", y)
         time.sleep(3)
 
-def visualize():
-    global m, c, image_path, binary_image
-    while True:
-        image = cv2.imread(image_path)
-        if m is not None and c is not None:
-            x_vals = np.array([0, image.shape[1]])
-            y_vals = m * x_vals + c
-            y_vals = y_vals.astype(int)
-            image = cv2.cvtColor(binary_image, cv2.COLOR_GRAY2BGR)
-            cv2.line(image, (x_vals[0], y_vals[0]), (x_vals[1], y_vals[1]), (0, 255, 0), 2)
-
-        cv2.imshow('Visualization', image)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cv2.destroyAllWindows()
-
 # グローバル変数
-m, c = None, None
+m = None
 binary_image = None
 image_path = r'C:\Users\daiko\drone\img\redLine4.jpg'
 
@@ -151,18 +130,8 @@ time.sleep(8)
 send("forward 100")
 time.sleep(5)
 
-
-# 画像処理スレッドを開始
-processing_thread = threading.Thread(target=process_image, args=(image_path,))
-processing_thread.start()
-
-# 可視化スレッドを開始
-visualization_thread = threading.Thread(target=visualize)
-visualization_thread.start()
-
-# スレッドの終了を待機
-processing_thread.join()
-visualization_thread.join()
+# 画像処理
+process_image(image_path)
 
 # 着陸
 send("land")

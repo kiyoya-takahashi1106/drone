@@ -7,7 +7,7 @@ import time
 
 # module
 from threshold import threshold
-from center_leastSquare import center_lastSquare
+from center_leastSquare import center_leastSquare
 from control import control
 
 
@@ -66,7 +66,7 @@ cap = cv2.VideoCapture(STREAM_URL)
 def calculate_control():
     _, frame = cap.read()
     binary_image = threshold(frame)
-    cx, cy, m = center_lastSquare(binary_image)
+    cx, cy, m = center_leastSquare(binary_image)
     angle_error, y_error, x_error = control(prevDistance, 960, 720, cx, cy, m)
     return angle_error, y_error, x_error
 

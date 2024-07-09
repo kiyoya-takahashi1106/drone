@@ -7,18 +7,21 @@ def threshold(image):
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # 白色の範囲を定義
-    lower_white = np.array([0, 0, 200], dtype=np.uint8)
-    upper_white = np.array([180, 50, 255], dtype=np.uint8)
+    # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
+    lower_red1 = np.array([0, 50, 50], dtype=np.uint8)
+    upper_red1 = np.array([10, 255, 255], dtype=np.uint8)
+    lower_red2 = np.array([170, 50, 50], dtype=np.uint8)
+    upper_red2 = np.array([180, 255, 255], dtype=np.uint8)
 
-    # 白色のマスクを作成
-    mask = cv2.inRange(hsv, lower_white, upper_white)
+    # 赤色のマスクを作成
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    mask = cv2.bitwise_or(mask1, mask2)
 
-    # マスクを適用して白い部分を抽出
+    # マスクを適用して赤い部分を抽出
     result = cv2.bitwise_and(image, image, mask=mask)
 
-    # グレースケールに変換して二値化
-    gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-    _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+    gray_image = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+    _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
 
-    return binary
+    return binary_image

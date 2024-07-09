@@ -1,21 +1,20 @@
-# 角度制御test
-# 赤線に対してある程度x軸にずれるように置いとく
+# x軸制御test
+# 赤線に対してある程度傾けて置く
 
 import cv2
-import math
 import numpy as np
-import time
 import socket
+import time
 
+"""
 # TelloのIPアドレスとポート番号
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
-STREAM_URL = 'udp://0.0.0.0:11111'
 
 # UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', 9000))
+sock.bind(('', 9001))
 
 def send(message):
     try:
@@ -34,48 +33,49 @@ def receive():
 def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
-
-# カメラ設定
-send("streamon")
-receive()
-time.sleep(2)
-
-# OpenCVを使ってストリームを取得
-cap = cv2.VideoCapture(STREAM_URL)
+"""
 
 
-# 制御関数定義
-def threshold(image):
+def threshold(image_path):
+    # 画像を読み込む
+    image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at {image_path}")
+
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # 白色の範囲を定義
-    lower_white = np.array([0, 0, 200], dtype=np.uint8)
-    upper_white = np.array([180, 50, 255], dtype=np.uint8)
+    # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
+    lower_red1 = np.array([0, 50, 50], dtype=np.uint8)
+    upper_red1 = np.array([10, 255, 255], dtype=np.uint8)
+    lower_red2 = np.array([170, 50, 50], dtype=np.uint8)
+    upper_red2 = np.array([180, 255, 255], dtype=np.uint8)
 
-    # 白色のマスクを作成
-    mask = cv2.inRange(hsv, lower_white, upper_white)
+    # 赤色のマスクを作成
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    mask = cv2.bitwise_or(mask1, mask2)
 
-    # マスクを適用して白い部分を抽出
+    # マスクを適用して赤い部分を抽出
     result = cv2.bitwise_and(image, image, mask=mask)
 
-    # グレースケールに変換して二値化
-    gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-    _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+    gray_image = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+    _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
 
-    return binary
+    return binary_image
 
 
-def center_lastSquare(binary_image):
+def center_leastSquare(binary_image):
     # 重心計算
     moments = cv2.moments(binary_image)   # モーメントを計算
     if moments["m00"] != 0:   # 重心が存在するか確認
+        print("重心ある")
         cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
         cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
     else:
+        print("重心はありません")
         cx, cy = None, None   # 重心が存在しない場合
     
-
     # 最小二乗法
     # 白色のピクセル座標を取得(y,x_coordsは配列)
     y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
@@ -95,37 +95,48 @@ def center_lastSquare(binary_image):
                 avg_x = np.mean(x_coords[mask])
                 grouped_y_coords.append(avg_y)
                 grouped_x_coords.append(avg_x)
-        print("grouped_y_coords", grouped_y_coords)
-        print("grouped_x_coords", grouped_x_coords)
+        # print("grouped_y_coords", grouped_y_coords)
+        # print("grouped_x_coords", grouped_x_coords)
 
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
-        m, c = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + c)
+        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + _)
+        m = -m
         return cx, cy, m
     return cx, cy, None   # 座標が存在しない場合
 
 
-def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行動の進んだ距離, 重心x座標, 重心y座標, 画像の幅, 画像の高さ, 傾き
-    # 今の角度から垂直にする角度
-    tan_theta = 1 / m
-    radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
-    angle_error = np.degrees(radians_error)   # ラジアンを度に変換
+def process_image(image_path):
+    global m, binary_image
+    # 赤色のピクセルを抽出して2値化
+    binary_image = threshold(image_path)
+    cx, cy, m = center_leastSquare(binary_image)
 
-    # y方向のずれ
-    y_error = prevDistance - prevDistance * math.cos(radians_error)
-
-    # x方向のずれ
-    # こっち側から重心までのy(img_height - cy)を入れたら, real/droの画面 比率が分かる.
-    fx = (40 * (1 + np.exp(0.85 * (img_height - cy - 5.4)))) / 3.07
+    print(cx, cy)
+    fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
 
     # 重心cxと画面中心のずれ(d)
-    cx_middle_error = img_width//2 - cx
+    cx_middle_error = 960//2 - cx
 
     # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
     x_error = cx_middle_error * fx
+    x_error = int(x_error)
 
-    return angle_error, y_error, x_error
+    print("cx, cy, m, x_error", cx, cy, m, x_error)
+    """
+    if(0 < x_error):
+        move("left", -x_error)
+    else:
+        move("right", x_error)
+    """
+        
 
+# グローバル変数
+cx, cy = None, None
+m = None
+binary_image = None
+image_path = r'C:\Users\daiko\drone\img\redLine3.jpg'
 
+"""
 # SDKモードを開始
 send("command")
 receive()
@@ -133,29 +144,16 @@ receive()
 # 離陸
 send("takeoff")
 time.sleep(5)
+"""
 
-_, frame = cap.read()
-cv2.imshow('Captured Frame', frame)
-cv2.waitKey('q')  # キー入力を待つ
-cv2.destroyAllWindows()
+# 画像処理
+process_image(image_path)
 
-binary_image = threshold(frame)
-cx, cy, m = center_lastSquare(binary_image)
-_, _, x_error = control(30, 960, 720, cx, cy, m)
-x = x_error
-
-# x軸制御
-if(x < 0):
-    x = -x
-    move("left", x)
-    print(f"left {x}")
-elif(x <= 0):
-    move("right", x)
-    print(f"right {x}")
-
+"""
 # 着陸
 send("land")
 receive()
 
 # ソケットを閉じる
 sock.close()
+"""

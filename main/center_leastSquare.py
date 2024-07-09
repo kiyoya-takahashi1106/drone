@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-def center_lastSquare(binary_image):
+def center_leastSquare(binary_image):
     # 重心計算
     moments = cv2.moments(binary_image)   # モーメントを計算
     if moments["m00"] != 0:   # 重心が存在するか確認
@@ -31,8 +31,8 @@ def center_lastSquare(binary_image):
                 avg_x = np.mean(x_coords[mask])
                 grouped_y_coords.append(avg_y)
                 grouped_x_coords.append(avg_x)
-        print("grouped_y_coords", grouped_y_coords)
-        print("grouped_x_coords", grouped_x_coords)
+        # print("grouped_y_coords", grouped_y_coords)
+        # print("grouped_x_coords", grouped_x_coords)
 
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
         m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + _)
