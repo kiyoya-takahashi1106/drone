@@ -1,4 +1,5 @@
 import React from 'react';
+import Desk from './Components/Desk';
 import TopHeader from './Components/TopHeader';
 import LeftHeader from './Components/LeftHeader';
 import { useState } from 'react';
@@ -8,6 +9,7 @@ function App() {
   const [M, setM] = useState(null)
   const [height, setHeight] = useState(null)
   const [width, setWidth] = useState(null)
+
   const handleSetN = (event) => {
     setN(event.target.value);
   }
@@ -28,7 +30,10 @@ function App() {
         <LeftHeader />
         <div style={{ height: '678px', width: '944px' }}>
           <div style={{ height: '471px', width: '944px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ height: '431px', width: '815px', marginTop: '20px', borderRadius: '50px', backgroundColor: '#D9D9D9' }}>
+            <div style={{ height: '431px', width: '815px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50px', backgroundColor: '#D9D9D9' }}>
+              <div style={{ height: '360px', width: '740px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Desk N={N} M={M} />
+              </div>
             </div>
           </div>
           <div style={{ height: '206px', width: '944px', display: 'flex' }}>
