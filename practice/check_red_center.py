@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 画像を読み込み
-image_path = 'C:\\Users\\daiko\\drone\\img\\redLine2.jpg'
+image_path = 'C:\\Users\\daiko\\drone\\img\\redLine3.jpg'
 image = cv2.imread(image_path)
 
 # BGR画像をHSVに変換
