@@ -1,10 +1,11 @@
 import React from 'react';
-import Desk from './Components/Desk';
-import TopHeader from './Components/TopHeader';
-import LeftHeader from './Components/LeftHeader';
+import { Link } from 'react-router-dom';
+import Desk from '../Components/Desk';
+import TopHeader from '../Components/TopHeader';
+import LeftHeader from '../Components/LeftHeader';
 import { useState } from 'react';
 
-function App() {
+function Home() {
   const [N, setN] = useState(null)
   const [M, setM] = useState(null)
   const [height, setHeight] = useState(null)
@@ -25,7 +26,7 @@ function App() {
 
   return (
     <div style={{ height: '832px', width: '1280px' }}>
-      <TopHeader />
+      <TopHeader s={"Home"} />
       <div style={{ display: 'flex' }}>
         <LeftHeader />
         <div style={{ height: '678px', width: '944px' }}>
@@ -59,7 +60,9 @@ function App() {
             <div style={{ height: '206px', width: '236px', fontFamily: '"Zen Dots", sans-serif', display: 'flex', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <button style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '70px', border: 'none', cursor: 'pointer' }}>Next</button>
-                <button style={{ border: 'none', fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', cursor: 'pointer' }}>Save</button>
+                <Link to={"/registeredroom"}>
+                  <button style={{ border: 'none', fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', cursor: 'pointer' }}>Save</button>
+                </Link>
               </div>
             </div>
           </div>
@@ -69,4 +72,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;
