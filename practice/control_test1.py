@@ -45,13 +45,14 @@ def threshold(image_path):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
-    lower_red1 = np.array([0, 50, 50], dtype=np.uint8)
-    upper_red1 = np.array([10, 255, 255], dtype=np.uint8)
-    lower_red2 = np.array([170, 50, 50], dtype=np.uint8)
-    upper_red2 = np.array([180, 255, 255], dtype=np.uint8)
+    lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
+    upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
+
+    lower_red2 = np.array([160, 100, 100])
+    upper_red2 = np.array([180, 255, 255])
 
     # 赤色のマスクを作成
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask1 = cv2.inRange(hsv, lower_red, upper_red)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = cv2.bitwise_or(mask1, mask2)
 

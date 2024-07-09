@@ -21,7 +21,7 @@ def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行
     cx_middle_error = img_width//2 - cx
 
     # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
-    x_error = cx_middle_error * fx
+    x_error = -cx_middle_error * fx
     x_error = int(x_error)
 
     return angle_error, y_error, x_error

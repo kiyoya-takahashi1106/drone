@@ -46,13 +46,14 @@ def threshold(image_path):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
-    lower_red1 = np.array([0, 50, 50], dtype=np.uint8)
-    upper_red1 = np.array([10, 255, 255], dtype=np.uint8)
-    lower_red2 = np.array([170, 50, 50], dtype=np.uint8)
-    upper_red2 = np.array([180, 255, 255], dtype=np.uint8)
+    lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
+    upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
+
+    lower_red2 = np.array([160, 100, 100])
+    upper_red2 = np.array([180, 255, 255])
 
     # 赤色のマスクを作成
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask1 = cv2.inRange(hsv, lower_red, upper_red)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = cv2.bitwise_or(mask1, mask2)
 
@@ -113,12 +114,14 @@ def process_image(image_path):
 
     print(cx, cy)
     fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
+    print("fx", fx)
 
     # 重心cxと画面中心のずれ(d)
     cx_middle_error = 960//2 - cx
+    print("cx_middle_errir", cx_middle_error)
 
     # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
-    x_error = cx_middle_error * fx
+    x_error = -cx_middle_error * fx
     x_error = int(x_error)
 
     print("cx, cy, m, x_error", cx, cy, m, x_error)
@@ -134,7 +137,7 @@ def process_image(image_path):
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine3.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine2.jpg'
 
 """
 # SDKモードを開始
