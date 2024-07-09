@@ -1,3 +1,5 @@
+// main/Home.jsxで使う
+
 import React, { useState, useEffect } from 'react';
 
 const Desk = ({ N, M }) => {
