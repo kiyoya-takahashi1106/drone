@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 画像を読み込み
-image_path = 'C:\\Users\\daiko\\drone\\img\\redLine50_1.jpg'
+image_path = 'C:\\Users\\daiko\\drone\\img\\redLine150_1.jpg'
 image = cv2.imread(image_path)
 
 # BGR画像をHSVに変換
@@ -41,7 +41,18 @@ if M["m00"] != 0:
 image_with_white_background = np.where(mask[:, :, None] == 0, 255, image)
 
 # 結果を表示
+plt.figure(figsize=(10, 5))
+
+# もとの画像を表示
+plt.subplot(1, 2, 1)
+plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+plt.title('Original Image with Centroid')
+plt.axis('off')  # 軸をオフにする
+
+# 赤色部分と白背景の画像を表示
+plt.subplot(1, 2, 2)
 plt.imshow(cv2.cvtColor(image_with_white_background, cv2.COLOR_BGR2RGB))
 plt.title('Image with Red Area and Centroid')
 plt.axis('off')  # 軸をオフにする
+
 plt.show()

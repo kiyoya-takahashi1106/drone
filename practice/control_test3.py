@@ -70,18 +70,14 @@ def center_leastSquare(binary_image):
     # 重心計算
     moments = cv2.moments(binary_image)   # モーメントを計算
     if moments["m00"] != 0:   # 重心が存在するか確認
-        print("重心ある")
         cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
         cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
     else:
-        print("重心はありません")
         cx, cy = None, None   # 重心が存在しない場合
     
     # 最小二乗法
     # 白色のピクセル座標を取得(y,x_coordsは配列)
     y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
-    print("y_coords", y_coords)
-    print("x_coords", x_coords)
 
     if len(x_coords) > 0:  # 座標が存在するか確認
         # y座標をstepピクセルごとにグループ化してx座標の平均を計算
@@ -111,10 +107,13 @@ def process_image(image_path):
     # 赤色のピクセルを抽出して2値化
     binary_image = threshold(image_path)
     cx, cy, m = center_leastSquare(binary_image)
+    print("cx, cy", cx, cy)
+    # print("m", m)
 
-    print(cx, cy)
     # fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
-    fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
+    # fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
+    # fx = 0.005784 * np.exp(0.013606 * (720 - cy)) + 0.346111
+    fx = 0.006689 * np.exp(0.013240 * (720 - cy)) + 0.359777
     print("fx", fx)
 
     # 重心cxと画面中心のずれ(d)
@@ -124,8 +123,8 @@ def process_image(image_path):
     # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
     x_error = -cx_middle_error * fx
     x_error = int(x_error)
+    print("x_error", x_error)
 
-    print("cx, cy, m, x_error", cx, cy, m, x_error)
     """
     if(0 < x_error):
         move("left", -x_error)
