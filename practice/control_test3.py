@@ -137,7 +137,7 @@ def process_image(image_path):
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine50_2.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine25_3.jpg'
 
 """
 # SDKモードを開始
