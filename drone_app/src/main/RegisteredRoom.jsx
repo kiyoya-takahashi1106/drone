@@ -1,8 +1,7 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useLocation, useParams } from 'react-router-dom';
 import TopHeader from '../Components/TopHeader';
 import LeftHeader from '../Components/LeftHeader';
-import { useState } from 'react';
 
 function RegisteredRoom() {
   const location = useLocation();
@@ -16,7 +15,10 @@ function RegisteredRoom() {
   const [N, setN] = useState(initN || '');
   const [height, setHeight] = useState(initHeight || '');
   const [width, setWidth] = useState(initWidth || '');
-
+  const params = useParams();
+  useEffect(() => {
+    console.log(params);
+  }, [params]);
   const handleSetRoomName = (event) => {
     setRoomName(event.target.value);
   };
