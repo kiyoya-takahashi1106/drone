@@ -6,8 +6,14 @@ import TopHeader from '../Components/TopHeader';
 import LeftHeader from '../Components/LeftHeader';
 
 function TelloSetting() {
-    const handleClose = () => {
-        window.close();
+    const handleButtonClick = async () => {
+        try {
+          const response = await fetch('http://localhost:3001/start-server');
+          const data = await response.text();
+          console.log(data);
+        } catch (error) {
+          console.error('Error:', error);
+        }
     };
 
     return (
@@ -21,12 +27,11 @@ function TelloSetting() {
                             <div style={{ fontSize: '59px' }}>Connct to Wifi</div>
                         </div>
                         <div style={{ fontSize: '30px' }}>
-                            <div>➀</div>
-                            <div>➁このブラウザを手動で閉じてください</div>
-                            <div>➂閉じた後TelloWifiと繋げてください</div>
+                            <div>➀このブラウザを手動で閉じてください</div>
+                            <div>➁閉じた後TelloWifiと繋げてください</div>
                         </div>
                     </div>
-                    <button onClick={handleClose} style={{ height: '70px', width: '300px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '20px', border: 'none', cursor: 'pointer' }}>close site</button>
+                    <button onClick={handleButtonClick } style={{ height: '120px', width: '300px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '20px', border: 'none', cursor: 'pointer' }}>server start</button>
                 </div>
             </div>
         </div>

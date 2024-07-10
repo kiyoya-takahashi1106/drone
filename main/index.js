@@ -1,4 +1,4 @@
-//app.js
+//index.js
 
 const http = require("http");
 const port = 8080;
@@ -14,18 +14,17 @@ const server = http.createServer(function (req, res) {
     pyProg.stdout.on("data", function (data) {
       console.log(data.toString());
     });
-    res.end();
+    res.end("Python script executed");
+  } else {
+    res.end("Invalid endpoint");
   }
 });
 
-// Set up our server so it will listen on the port
-server.listen(port, function (error) {
-  // Checking any error occur while listening on port
+
+server.listen(port, (error) => {
   if (error) {
     console.log("Something went wrong", error);
-  }
-  // Else sent message of listening
-  else {
-    console.log("Server is listening on port" + port);
+  } else {
+    console.log("Server is listening on port " + port);
   }
 });

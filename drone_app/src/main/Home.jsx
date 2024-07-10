@@ -58,7 +58,7 @@ function Home() {
 
             <div style={{ height: '206px', width: '236px', fontFamily: '"Zen Dots", sans-serif', display: 'flex', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <Link to={"/home/setting"}>
+                <Link to={{ pathname: "/home/setting/"+N+"/"+M+"/"+height+"/"+width }}>
                   <button style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '70px', border: 'none', cursor: 'pointer' }}>Next</button>
                 </Link>
                 <Link to={{ pathname: "/registeredroom/"+N+"/"+M+"/"+height+"/"+width }}>

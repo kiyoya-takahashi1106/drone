@@ -11,10 +11,15 @@ const Rooter = () => {
             <Routes>
                 <Route path="/" element={<Loading />} />
                 <Route path="/home" element={<Home />} />
+
                 <Route path="/home/setting" element={<TelloSetting />} />
+                <Route path="/home/setting/:N/:M/:height/:width" element={<TelloSetting />} />
+
                 <Route path="/home/setting/wificonnect" element={<WifiConnect />} />
-                <Route path="/registeredroom/:N/:M/:height/:width" element={<RegisteredRoom />} />
+                <Route path="/home/setting/wificonnect/:N/:M/:height/:width" element={<WifiConnect />} />
+
                 <Route path="/registeredroom" element={<RegisteredRoom />} />
+                <Route path="/registeredroom/:N/:M/:height/:width" element={<RegisteredRoom />} />
             </Routes>
         </BrowserRouter>
     )
