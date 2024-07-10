@@ -1,32 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Desk from '../Components/Desk';
 import TopHeader from '../Components/TopHeader';
 import LeftHeader from '../Components/LeftHeader';
-import { useState } from 'react';
 
 function Home() {
-  const [N, setN] = useState(null)
-  const [M, setM] = useState(null)
-  const [height, setHeight] = useState(null)
-  const [width, setWidth] = useState(null)   
-  const dataToSend = {   // RegistredRoomへのprops
-    M: M, N: N,
-    height: height, width: width
+  const [N, setN] = useState('');
+  const [M, setM] = useState('');
+  const [height, setHeight] = useState('');
+  const [width, setWidth] = useState('');   
+  const dataToSend = {
+    initN: N,
+    initM: M,
+    initHeight: height,
+    initWidth: width
   };
 
   const handleSetN = (event) => {
     setN(event.target.value);
-  }
+  };
   const handleSetM = (event) => {
     setM(event.target.value);
-  }
+  };
   const handleSetHeight = (event) => {
     setHeight(event.target.value);
-  }
+  };
   const handleSetWidth = (event) => {
     setWidth(event.target.value);
-  }
+  };
 
   return (
     <div style={{ height: '832px', width: '1280px' }}>
@@ -66,7 +67,7 @@ function Home() {
                 <Link to={"/home/setting"}>
                   <button style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '70px', border: 'none', cursor: 'pointer' }}>Next</button>
                 </Link>
-                <Link to={{pathname: "/registeredroom", state: dataToSend}}>
+                <Link to={{ pathname: "/registeredroom", state: dataToSend }}>
                   <button style={{ fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', border: 'none', cursor: 'pointer' }}>Save</button>
                 </Link>
               </div>

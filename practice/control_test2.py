@@ -5,8 +5,9 @@ import cv2
 import math
 import numpy as np
 import time
-import socket
+# import socket
 
+"""
 # TelloのIPアドレスとポート番号
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
@@ -33,6 +34,7 @@ def receive():
 def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
+"""
 
 def threshold(image_path):
     # 画像を読み込む
@@ -88,8 +90,8 @@ def center_leastSquare(binary_image):
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
         m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + _)
         m = -m
-        return m
-    return None
+        return m, _
+    return None, None
 
 def process_image(image_path):
     global m, binary_image
@@ -97,14 +99,15 @@ def process_image(image_path):
     binary_image = threshold(image_path)
 
     # 最小二乗法で直線フィット
-    m, c = center_leastSquare(binary_image)
+    m, _ = center_leastSquare(binary_image)
     if (m is not None):
         print(f"Fitted line: y = {m}x")
         tan_theta = 1 / m
         radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
         angle_error = np.degrees(radians_error)   # ラジアンを度に変換
-        print(angle_error)
+        print("angle_error", angle_error)
         angle_error = int(angle_error)
+        """
         if(angle_error < 0):
             move("ccw", -angle_error)
         else:
@@ -114,12 +117,14 @@ def process_image(image_path):
         y = int(y)
         move("forward", y)
         time.sleep(3)
+        """
 
 # グローバル変数
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine2.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine50_4.jpg'
 
+"""
 # SDKモードを開始
 send("command")
 receive()
@@ -130,13 +135,16 @@ time.sleep(8)
 
 send("forward 100")
 time.sleep(5)
+"""
 
 # 画像処理
 process_image(image_path)
 
+"""
 # 着陸
 send("land")
 receive()
 
 # ソケットを閉じる
 sock.close()
+"""

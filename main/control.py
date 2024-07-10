@@ -15,7 +15,7 @@ def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行
 
     # x方向のずれ
     # こっち側から重心までのy(img_height - cy)を入れたら, real/droの画面 比率が分かる.
-    fx = 0.001265 * np.exp(0.018237 * (img_height - cy)) + 0.367068
+    fx = 0.003051 * np.exp(0.015006 * (img_height - cy)) + 0.430705
 
     # 重心cxと画面中心のずれ(d)
     cx_middle_error = img_width//2 - cx

@@ -113,7 +113,8 @@ def process_image(image_path):
     cx, cy, m = center_leastSquare(binary_image)
 
     print(cx, cy)
-    fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
+    # fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
+    fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
     print("fx", fx)
 
     # 重心cxと画面中心のずれ(d)
@@ -137,7 +138,7 @@ def process_image(image_path):
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine2.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine50_2.jpg'
 
 """
 # SDKモードを開始
