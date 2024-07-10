@@ -9,7 +9,11 @@ function Home() {
   const [N, setN] = useState(null)
   const [M, setM] = useState(null)
   const [height, setHeight] = useState(null)
-  const [width, setWidth] = useState(null)
+  const [width, setWidth] = useState(null)   
+  const dataToSend = {   // RegistredRoomへのprops
+    M: M, N: N,
+    height: height, width: width
+  };
 
   const handleSetN = (event) => {
     setN(event.target.value);
@@ -59,11 +63,11 @@ function Home() {
 
             <div style={{ height: '206px', width: '236px', fontFamily: '"Zen Dots", sans-serif', display: 'flex', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <Link to={"/home/wificonnect"}>
+                <Link to={"/home/setting"}>
                   <button style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '70px', border: 'none', cursor: 'pointer' }}>Next</button>
                 </Link>
-                <Link to={"/registeredroom"}>
-                  <button style={{ border: 'none', fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', cursor: 'pointer' }}>Save</button>
+                <Link to={{pathname: "/registeredroom", state: dataToSend}}>
+                  <button style={{ fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', border: 'none', cursor: 'pointer' }}>Save</button>
                 </Link>
               </div>
             </div>
