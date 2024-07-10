@@ -9,12 +9,6 @@ function Home() {
   const [M, setM] = useState('');
   const [height, setHeight] = useState('');
   const [width, setWidth] = useState('');   
-  const dataToSend = {
-    initN: N,
-    initM: M,
-    initHeight: height,
-    initWidth: width
-  };
 
   const handleSetN = (event) => {
     setN(event.target.value);
