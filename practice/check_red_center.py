@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def threshold(image_path):
     # 画像を読み込む
     image = cv2.imread(image_path)
@@ -28,6 +29,7 @@ def threshold(image_path):
 
     return image, binary_image
 
+
 def remove_noise(binary_image, cell_size=6, threshold=0.7):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
@@ -41,6 +43,7 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
                 binary_image[y:y+cell_size, x:x+cell_size] = 0
 
     return binary_image
+
 
 def center_leastSquare(binary_image):
     moments = cv2.moments(binary_image)
@@ -72,6 +75,7 @@ def center_leastSquare(binary_image):
         return cx, cy, m, grouped_x_coords, grouped_y_coords
     return cx, cy, None, [], []
 
+
 def plot_results(original_image, binary_image, denoised_image, cx, cy, m, grouped_x_coords, grouped_y_coords):
     fig, axes = plt.subplots(1, 3, figsize=(18, 6), constrained_layout=True)
 
@@ -98,8 +102,10 @@ def plot_results(original_image, binary_image, denoised_image, cx, cy, m, groupe
 
     plt.show()
     
+    
 # テスト用の画像パスを設定
-image_path = r'C:\Users\daiko\drone\img\redLine4.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine5.jpg'
+# image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine25_2.jpg'
 
 # 二値化を行う
 original_image, binary_image = threshold(image_path)
