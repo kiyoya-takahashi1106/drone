@@ -66,6 +66,21 @@ def threshold(image_path):
     return binary_image
 
 
+def remove_noise(binary_image, cell_size=6, threshold=0.7):
+    height, width = binary_image.shape[:2]
+    for y in range(0, height, cell_size):
+        for x in range(0, width, cell_size):
+            cell = binary_image[y:y+cell_size, x:x+cell_size]
+            red_pixels = np.sum(cell == 255)
+            total_pixels = cell.size
+            red_ratio = red_pixels / total_pixels
+            
+            if red_ratio < threshold:
+                binary_image[y:y+cell_size, x:x+cell_size] = 0
+
+    return binary_image
+
+
 def center_leastSquare(binary_image):
     # 重心計算
     moments = cv2.moments(binary_image)   # モーメントを計算
@@ -85,7 +100,7 @@ def center_leastSquare(binary_image):
         grouped_y_coords = []
         grouped_x_coords = []
         
-        step = 50
+        step = 20
         for y in range(0, max(y_coords) + step, step):
             mask = (y_coords >= y) & (y_coords < y + step)
             if np.any(mask):
@@ -93,23 +108,26 @@ def center_leastSquare(binary_image):
                 avg_x = np.mean(x_coords[mask])
                 grouped_y_coords.append(avg_y)
                 grouped_x_coords.append(avg_x)
-        # print("grouped_y_coords", grouped_y_coords)
-        # print("grouped_x_coords", grouped_x_coords)
 
-        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
-        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + _)
+        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T
+        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
         m = -m
+        # デバッグ用のプリント文
+        print("(m):", m)
         return cx, cy, m
-    return cx, cy, None   # 座標が存在しない場合
+    return cx, cy, None
 
 
 def process_image(image_path):
     global m, binary_image
     # 赤色のピクセルを抽出して2値化
     binary_image = threshold(image_path)
-    cx, cy, m = center_leastSquare(binary_image)
+    # 画像のノイズを消す
+    denoised_image = remove_noise(binary_image)
+    # 最小二乗法で直線フィット
+    cx, cy, m = center_leastSquare(denoised_image)
     print("cx, cy", cx, cy)
-    # print("m", m)
+    print("m", m)
 
     # fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
     # fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
@@ -139,7 +157,7 @@ def process_image(image_path):
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine4.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine150_2.jpg'
 
 """
 # SDKモードを開始

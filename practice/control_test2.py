@@ -81,14 +81,18 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
 
 
 def center_leastSquare(binary_image):
-    moments = cv2.moments(binary_image)
-    if moments["m00"] != 0:
-        cx = int(moments["m10"] / moments["m00"])
-        cy = int(moments["m01"] / moments["m00"])
+    # 重心計算
+    moments = cv2.moments(binary_image)   # モーメントを計算
+    if moments["m00"] != 0:   # 重心が存在するか確認
+        cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
+        cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
     else:
-        cx, cy = None, None
-
+        cx, cy = None, None   # 重心が存在しない場合
+        
+    # 最小二乗法
+    # 白色のピクセル座標を取得(y,x_coordsは配列)
     y_coords, x_coords = np.where(binary_image == 255)
+    
     if len(x_coords) > 0:
         grouped_y_coords = []
         grouped_x_coords = []
