@@ -48,7 +48,6 @@ def threshold(image_path):
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
     lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
     upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
-
     lower_red2 = np.array([160, 100, 100])
     upper_red2 = np.array([180, 255, 255])
 
@@ -65,18 +64,36 @@ def threshold(image_path):
 
     return binary_image
 
-def center_leastSquare(binary_image):
-    # 白色のピクセル座標を取得
-    y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
-    print("y_coords", y_coords)
-    print("x_coords", x_coords)
 
-    if len(x_coords) > 0:  # 座標が存在するか確認
-        # y座標をstepピクセルごとにグループ化してx座標の平均を計算
+def remove_noise(binary_image, cell_size=6, threshold=0.7):
+    height, width = binary_image.shape[:2]
+    for y in range(0, height, cell_size):
+        for x in range(0, width, cell_size):
+            cell = binary_image[y:y+cell_size, x:x+cell_size]
+            red_pixels = np.sum(cell == 255)
+            total_pixels = cell.size
+            red_ratio = red_pixels / total_pixels
+            
+            if red_ratio < threshold:
+                binary_image[y:y+cell_size, x:x+cell_size] = 0
+
+    return binary_image
+
+
+def center_leastSquare(binary_image):
+    moments = cv2.moments(binary_image)
+    if moments["m00"] != 0:
+        cx = int(moments["m10"] / moments["m00"])
+        cy = int(moments["m01"] / moments["m00"])
+    else:
+        cx, cy = None, None
+
+    y_coords, x_coords = np.where(binary_image == 255)
+    if len(x_coords) > 0:
         grouped_y_coords = []
         grouped_x_coords = []
-        
-        step = 50
+
+        step = 20
         for y in range(0, max(y_coords) + step, step):
             mask = (y_coords >= y) & (y_coords < y + step)
             if np.any(mask):
@@ -84,29 +101,33 @@ def center_leastSquare(binary_image):
                 avg_x = np.mean(x_coords[mask])
                 grouped_y_coords.append(avg_y)
                 grouped_x_coords.append(avg_x)
-        print("grouped_y_coords", grouped_y_coords)
-        print("grouped_x_coords", grouped_x_coords)
 
-        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
-        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + _)
+        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T
+        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
         m = -m
-        return m, _
-    return None, None
+        # デバッグ用のプリント文
+        print("(m):", m)
+        return cx, cy, m
+    return cx, cy, None
+
 
 def process_image(image_path):
     global m, binary_image
     # 赤色のピクセルを抽出して2値化
     binary_image = threshold(image_path)
-
+    # 画像のノイズを消す
+    denoised_image = remove_noise(binary_image)
     # 最小二乗法で直線フィット
-    m, _ = center_leastSquare(binary_image)
+    cx, cy, m = center_leastSquare(denoised_image)
+    
     if (m is not None):
         print(f"Fitted line: y = {m}x")
         tan_theta = 1 / m
         radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
         angle_error = np.degrees(radians_error)   # ラジアンを度に変換
-        print("angle_error", angle_error)
         angle_error = int(angle_error)
+        angle_error = -angle_error
+        print("angle_error", angle_error)
         """
         if(angle_error < 0):
             move("ccw", -angle_error)
@@ -120,9 +141,10 @@ def process_image(image_path):
         """
 
 # グローバル変数
+cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine50_4.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine150_1.jpg'
 
 """
 # SDKモードを開始
@@ -132,9 +154,6 @@ receive()
 # 離陸
 send("takeoff")
 time.sleep(8)
-
-send("forward 100")
-time.sleep(5)
 """
 
 # 画像処理

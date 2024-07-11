@@ -64,7 +64,23 @@ def threshold(image_path):
 
     return binary_image
 
-def leastSquares(binary_image):
+
+def remove_noise(binary_image, cell_size=6, threshold=0.7):
+    height, width = binary_image.shape[:2]
+    for y in range(0, height, cell_size):
+        for x in range(0, width, cell_size):
+            cell = binary_image[y:y+cell_size, x:x+cell_size]
+            red_pixels = np.sum(cell == 255)
+            total_pixels = cell.size
+            red_ratio = red_pixels / total_pixels
+            
+            if red_ratio < threshold:
+                binary_image[y:y+cell_size, x:x+cell_size] = 0
+
+    return binary_image
+
+
+def leastSquare(binary_image):
     # 白色のピクセル座標を取得
     y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
     print("y_coords", y_coords)
@@ -75,7 +91,7 @@ def leastSquares(binary_image):
         grouped_y_coords = []
         grouped_x_coords = []
         
-        step = 50
+        step = 20
         for y in range(0, max(y_coords) + step, step):
             mask = (y_coords >= y) & (y_coords < y + step)
             if np.any(mask):
@@ -96,15 +112,19 @@ def process_image(image_path):
     global m, binary_image
     # 赤色のピクセルを抽出して2値化
     binary_image = threshold(image_path)
-
+    # 画像のノイズを消す
+    denoised_image = remove_noise(binary_image)
     # 最小二乗法で直線フィット
-    m = leastSquares(binary_image)
+    cx, cy, m = leastSquare(denoised_image)
+    
     print(m)
     if (m is not None):
         print(f"Fitted line: y = {m}x")
         tan_theta = 1 / m
         radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
         angle_error = np.degrees(radians_error)   # ラジアンを度に変換
+        angle_error = int(angle_error)
+        angle_error = -angle_error
         print(angle_error)
     """
         angle_error = int(angle_error)

@@ -75,6 +75,7 @@ def center_leastSquare(binary_image):
     else:
         cx, cy = None, None   # 重心が存在しない場合
     
+    
     # 最小二乗法
     # 白色のピクセル座標を取得(y,x_coordsは配列)
     y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
@@ -138,7 +139,7 @@ def process_image(image_path):
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine50_6.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine4.jpg'
 
 """
 # SDKモードを開始
