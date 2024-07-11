@@ -20,4 +20,4 @@
 7/08 [資料を作るためのx軸の仕組みを書く. 角度,y軸制御,x軸の試しと修正. control.pyで使うfxの見直しと修正.]
 7/09 [x軸制御試しの続き, 線以外の赤色も取得していたからマスクの範囲をしぼめた. Drone_appの作成(LeftHeader.jsx, TopHeader.jsx, Desk.jsx, Home.jsx, Loading.jsx作成,  react-roter設定)]
 7/10 [Drone_appの作成(Room.jsx, RegisteredRoom.jsx, TelloSetting.jsx, WifiConnect.jsx作成, useParantで[N,M,height,width]をurlで渡してく.) サンプル値を追加し,fxを更新.]
-7/11 [remove_noise.pyを追加し画像のノイズを抑える事に成功. ]
+7/11 [remove_noise.pyを追加し,画像のノイズを抑える事に成功. 制御の順番が無かったのでy軸→角度,x軸と順番付けしそれに伴ってmain.pyに制御計算関数もう一つ作成した. remove.noise.py作成. capture_image.py作成. angle_errorを正しく更新.]
