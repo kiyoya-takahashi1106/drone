@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def threshold(image_path):
     # 画像を読み込む
     image = cv2.imread(image_path)
@@ -29,7 +28,6 @@ def threshold(image_path):
 
     return image, binary_image
 
-
 def remove_noise(binary_image, cell_size=6, threshold=0.7):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
@@ -44,13 +42,11 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
 
     return binary_image
 
-
 def center_leastSquare(binary_image):
     moments = cv2.moments(binary_image)
-    img_height = denoised_image.shape[0]
     if moments["m00"] != 0:
         cx = int(moments["m10"] / moments["m00"])
-        cy = (img_height - int(moments["m01"] / moments["m00"])) * 720 / img_height
+        cy = int(moments["m01"] / moments["m00"])
     else:
         cx, cy = None, None
 
@@ -65,23 +61,19 @@ def center_leastSquare(binary_image):
             if np.any(mask):
                 avg_y = np.mean(y_coords[mask])
                 avg_x = np.mean(x_coords[mask])
-                grouped_y_coords.append((img_height - avg_y) * 720/ img_height)
+                grouped_y_coords.append(avg_y)
                 grouped_x_coords.append(avg_x)
 
         A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T
-        m, c = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
-
+        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
+        m = -m
         # デバッグ用のプリント文
         print("(m):", m)
-        print("(c):", c)
+        return cx, cy, m, grouped_x_coords, grouped_y_coords
+    return cx, cy, None, [], []
 
-        return cx, cy, m, c, grouped_x_coords, grouped_y_coords
-    return cx, cy, None, None, [], []
-
-
-def plot_results(original_image, binary_image, denoised_image, cx, cy, m, c, grouped_x_coords, grouped_y_coords):
+def plot_results(original_image, binary_image, denoised_image, cx, cy, m, grouped_x_coords, grouped_y_coords):
     fig, axes = plt.subplots(1, 3, figsize=(18, 6), constrained_layout=True)
-    plt.subplots_adjust(wspace=0.05)
 
     # 元画像を表示
     axes[0].imshow(cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB))
@@ -98,28 +90,13 @@ def plot_results(original_image, binary_image, denoised_image, cx, cy, m, c, gro
     axes[2].set_title('Denoised Image')
     axes[2].axis('off')  # 軸を表示しない
 
-    # 画像の高さを取得
-    img_height = denoised_image.shape[0]
-
-    if cx is not None and cy is not None and m is not None and c is not None:
+    if cx is not None and cy is not None:
         for ax in axes:
-            # y 座標を反転させる
-            # flipped_cy = img_height - cy
-            # flipped_grouped_y_coords = img_height - np.array(grouped_y_coords)
-
             ax.plot(cx, cy, 'ro')
-            x_vals = np.array(ax.get_xlim())
-            y_vals = m * x_vals + c
-            y_vals = np.clip(y_vals, 0, denoised_image.shape[0])
-            ax.plot(x_vals, img_height - y_vals, 'r-')
-            
             # グループ化された座標をプロット
-            ax.plot(0, 0, 'bo')
-            ax.plot(960, 720, 'bo')
             ax.plot(grouped_x_coords, grouped_y_coords, 'bo')
 
     plt.show()
-
     
 # テスト用の画像パスを設定
 image_path = r'C:\Users\daiko\drone\img\redLine4.jpg'
@@ -131,7 +108,10 @@ original_image, binary_image = threshold(image_path)
 denoised_image = remove_noise(binary_image.copy())
 
 # 重心と最小二乗法を適用
-cx, cy, m, c, grouped_x_coords, grouped_y_coords = center_leastSquare(denoised_image)
+cx, cy, m, grouped_x_coords, grouped_y_coords = center_leastSquare(denoised_image)
+
+print(grouped_y_coords)
+print(grouped_x_coords)
 
 # 結果をプロット
-plot_results(original_image, binary_image, denoised_image, cx, cy, m, c, grouped_x_coords, grouped_y_coords)
+plot_results(original_image, binary_image, denoised_image, cx, cy, m, grouped_x_coords, grouped_y_coords)
