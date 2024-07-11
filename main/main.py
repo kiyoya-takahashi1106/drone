@@ -6,7 +6,9 @@ import socket
 import time
 
 # module
+from capture_image import capture_image
 from threshold import threshold
+from remove_noise import remove_noise
 from center_leastSquare import center_leastSquare
 from control import control
 
@@ -62,13 +64,28 @@ time.sleep(2)
 cap = cv2.VideoCapture(STREAM_URL)
 
 
-# 関数定義
-def calculate_control():
-    _, frame = cap.read()
-    binary_image = threshold(frame)
-    cx, cy, m = center_leastSquare(binary_image)
-    angle_error, y_error, x_error = control(prevDistance, 960, 720, cx, cy, m)
-    return angle_error, y_error, x_error
+# 制御計算(x軸制御した後, 角度&y軸制御)
+def calculate_control1():
+    # 写真を撮る
+    image_path = capture_image()
+    image = cv2.imread(image_path)
+    # x軸制御
+    binary_image = threshold(image)
+    denoise_image = remove_noise(binary_image, 6, 0.7)
+    cx, cy, m = center_leastSquare(denoise_image)
+    _, _, x_error = control(prevDistance, 960, 720, cx, cy, m)
+    return x_error
+
+def calculate_control2():
+    # 写真を撮る
+    image_path = capture_image()
+    image = cv2.imread(image_path)
+    # 角度,y軸制御
+    binary_image = threshold(image)
+    denoise_image = remove_noise(binary_image, 6, 0.7)
+    cx, cy, m = center_leastSquare(denoise_image)
+    angle_error, y_error, _ = control(prevDistance, 960, 720, cx, cy, m)
+    return angle_error, y_error
 
 
 # 動作
@@ -88,18 +105,57 @@ copy_M = M   # 残り何行あるか
 move_flag = False   # ラスト1行になったらTrue
 angle_error_flag = False   # Trueなら角度誤差を修正
 y_error_flag = False   # Trueならy軸誤差を修正
-x_error_flag = False
+x_error_flag = False   # Trueならx軸誤差を修正
 sum_y_error = 0
 prevDistance = 0
 
 while(i < L):   
     j = 0
     while(j < N + 2):
-        # 制御 & パラメーター更新
+        # x軸関係
         if(j != 0): 
-            # 制御計算
-            angle_error, y_error, x_error = calculate_control()
-
+            # x軸制御計算
+            x_error = calculate_control1()
+            # x軸制御設定
+            if(x_error < -15  or  15 < x_error):   # ☆値は要調整☆
+                x_error_flag = True
+            if(j < N):
+                if(x_error_flag == True):
+                    x = x_error
+                    x_error_flag = False
+                else:
+                    x = 0
+            elif(N <= j < N+2):
+                if(x_error_flag == True):
+                    x = -x_error
+                    x_error_flag = False
+                else:
+                    x = 0
+                    
+        # j = 0 時の初期x
+        else:
+            x = 0
+        
+        # drone動作
+        # x軸制御
+        if(j < N):  
+            # x軸制御
+            if(x == 0):
+                pass
+            else:
+                if(x < 0):
+                    x = -x
+                    move("left", x)
+                elif(0 < x):
+                    move("right", x)
+                time.sleep(4)
+        
+        
+        
+        # 角度,y軸制御, droneマニュアル動作関係
+        if(j != 0): 
+            # 角度,y軸制御計算
+            angle_error, y_error = calculate_control2()
             # 角度制御設定 
             if(angle_error <= -10  or  10 <= angle_error):   # ☆値は要調整☆
                 angle_error_flag = True
@@ -112,7 +168,7 @@ while(i < L):
                     angle_error_flag = False
                 else:
                     angle = 45
-            elif(N <= j):
+            elif(N <= j < N+2):
                 if(angle_error_flag == True):
                     angle = angle_error
                     angle_error_flag = False
@@ -145,45 +201,17 @@ while(i < L):
                 else:   # j == Nの時は確定でこっち
                     y = (Move_lenght_y*(N-1) - first_half_y_error) // 2
             prevDistance = y
-
-            # x軸制御設定
-            if(x_error < -15  or  15 < x_error):   # ☆値は要調整☆
-                x_error_flag = True
-            if(j < N):
-                if(x_error_flag == True):
-                    x = x_error
-                    x_error_flag = False
-                else:
-                    x = 0
-            elif(N <= j < N+2):
-                if(x_error_flag == True):
-                    x = -x_error
-                    x_error_flag = False
-                else:
-                    x = 0
-
-        # j = 0 時の初期パラメーター
+        
+        # j = 0 時の初期angleとy
         else:
             angle = 45
             y = 90
-            x = 0
             prevDistance = y
-
+            
         # drone動作
-        # 写真撮りながら, forward方向に進む
-        if(j < N):  
-            # x軸制御
-            if(x == 0):
-                pass
-            else:
-                if(x < 0):
-                    x = -x
-                    move("left", x)
-                elif(0 < x):
-                    move("right", x)
-                time.sleep(4)
-
-            # マニュアル動作 (首振って前進をN回繰り返す. 最後の一回は首振るだけ)
+        # 角度,y軸制御
+        if(j < N): 
+            # マニュアル動作 (左右に首振って前進をN回繰り返す. 列数がラスト1ならば右に首振るだけ(左には降らない))
             if(move_flag == False):   # 通常モード
                 move("ccw", angle)   # 角度制御
                 time.sleep(4)
@@ -201,15 +229,15 @@ while(i < L):
                 time.sleep(5)
             else:
                 pass
-
+        
         # 前に戻ってくる(back方向に進む), 制御は2回目戻る時だけ(1回目はしない)
-        elif(N <= j < N+2):   
+        elif(N <= j < N+2):
             if(N == j):   # 初めは180°回転
                 move("ccw", 180)
                 time.sleep(6)
 
             # 角度 & x軸制御
-            if(N == N+1):
+            elif(N == j+1):
                 # 角度制御
                 if(angle == 0):
                     pass
@@ -235,26 +263,16 @@ while(i < L):
             # ナチュラル動作
             move("forward", y)   # y軸制御
             time.sleep(8)
+            
         j += 1
-
     copy_M -= 2   # 残り何行あるか更新
 
     # 90°半時計, まっすぐ, 90°半時計(要するに横移動) ※まっすぐ移動前に角度,x軸(90°傾いてなかったらy軸)制御
     move("ccw", 90)
     time.sleep(4)
 
-    # 制御計算
-    angle_error, y_error, x_error = calculate_control()
-    
-    # 角度制御
-    angle = angle_error
-    if(angle < 0):
-        angle = -angle
-        move("ccw", angle)
-    elif(0 < angle):
-        move("cw", angle)
-    time.sleep(3)
-    
+    # x軸制御計算
+    x_error = calculate_control1()
     # x軸制御(実際はy制御)
     x = x_error
     if(x < 0):
@@ -265,8 +283,19 @@ while(i < L):
         move("right", x)
         sum_y_error = 0
     time.sleep(3)
+    
+    # 角度制御計算
+    angle_error, y_error = calculate_control1()
+    # 角度制御
+    angle = angle_error
+    if(angle < 0):
+        angle = -angle
+        move("ccw", angle)
+    elif(0 < angle):
+        move("cw", angle)
+    time.sleep(3)
 
-    # ナチュラル動作
+    # マニュアル動作
     if(copy_M >= 2):   
         move("forward", Move_lenght_x * 2)
         time.sleep(8)

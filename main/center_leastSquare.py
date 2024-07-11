@@ -2,9 +2,9 @@
 import cv2
 import numpy as np
 
-def center_leastSquare(binary_image):
+def center_leastSquare(denoise_image):
     # 重心計算
-    moments = cv2.moments(binary_image)   # モーメントを計算
+    moments = cv2.moments(denoise_image)   # モーメントを計算
     if moments["m00"] != 0:   # 重心が存在するか確認
         cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
         cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
@@ -14,16 +14,14 @@ def center_leastSquare(binary_image):
 
     # 最小二乗法
     # 白色のピクセル座標を取得(y,x_coordsは配列)
-    y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
-    print("y_coords", y_coords)
-    print("x_coords", x_coords)
+    y_coords, x_coords = np.where(denoise_image == 255)  # 白色のピクセル座標を取得
 
     if len(x_coords) > 0:  # 座標が存在するか確認
         # y座標をstepピクセルごとにグループ化してx座標の平均を計算
         grouped_y_coords = []
         grouped_x_coords = []
         
-        step = 50
+        step = 20
         for y in range(0, max(y_coords) + step, step):
             mask = (y_coords >= y) & (y_coords < y + step)
             if np.any(mask):

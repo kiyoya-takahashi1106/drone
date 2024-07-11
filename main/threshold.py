@@ -2,15 +2,17 @@
 import cv2
 import numpy as np
 
-# 画像を二値化し
+# 画像を二値化
 def threshold(image):
+    if image is None:
+        raise FileNotFoundError(f"Image can not found")
+    
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
-    lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
-    upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
-
+    lower_red = np.array([0, 100, 100]) 
+    upper_red = np.array([10, 255, 255])  
     lower_red2 = np.array([160, 100, 100])
     upper_red2 = np.array([180, 255, 255])
 

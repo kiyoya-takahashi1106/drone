@@ -8,6 +8,7 @@ def control(prevDistance, img_width, img_height, cx, cy, m):   # 一つ前の行
     radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
     angle_error = np.degrees(radians_error)   # ラジアンを度に変換
     angle_error = int(angle_error)
+    angle_error = -angle_error
 
     # y方向のずれ
     y_error = prevDistance - prevDistance * math.cos(radians_error)
