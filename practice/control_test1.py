@@ -35,19 +35,16 @@ def move(direction, distance):
     receive()
 """
 
-def threshold(image_path):
+def binarization(image_path):
     # 画像を読み込む
     image = cv2.imread(image_path)
-    if image is None:
-        raise FileNotFoundError(f"Image not found at {image_path}")
 
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
-    lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
-    upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
-
+    lower_red = np.array([0, 100, 100])
+    upper_red = np.array([10, 255, 255])
     lower_red2 = np.array([160, 100, 100])
     upper_red2 = np.array([180, 255, 255])
 
@@ -65,7 +62,7 @@ def threshold(image_path):
     return binary_image
 
 
-def remove_noise(binary_image, cell_size=6, threshold=0.7):
+def remove_noise(binary_image, cell_size, threshold):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
         for x in range(0, width, cell_size):
@@ -80,42 +77,60 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
     return binary_image
 
 
-def leastSquare(binary_image):
-    # 白色のピクセル座標を取得
-    y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
-    print("y_coords", y_coords)
-    print("x_coords", x_coords)
+def group_coordinates(x_coords, y_coords, step):
+    grouped_y_coords = []
+    grouped_x_coords = []
 
-    if len(x_coords) > 0:  # 座標が存在するか確認
-        # y座標をstepピクセルごとにグループ化してx座標の平均を計算
-        grouped_y_coords = []
-        grouped_x_coords = []
-        
-        step = 20
-        for y in range(0, max(y_coords) + step, step):
-            mask = (y_coords >= y) & (y_coords < y + step)
-            if np.any(mask):
-                avg_y = np.mean(y_coords[mask])
-                avg_x = np.mean(x_coords[mask])
-                grouped_y_coords.append(avg_y)
-                grouped_x_coords.append(avg_x)
-        # print("grouped_y_coords", grouped_y_coords)
-        # print("grouped_x_coords", grouped_x_coords)
+    for y in range(0, max(y_coords) + step, step):
+        mask = (y_coords >= y) & (y_coords < y + step)
+        if np.any(mask):
+            avg_y = np.mean(y_coords[mask])
+            avg_x = np.mean(x_coords[mask])
+            grouped_y_coords.append(avg_y)
+            grouped_x_coords.append(avg_x)
+    
+    return np.array(grouped_x_coords), np.array(grouped_y_coords)
 
-        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T   # 行列を作成
-        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]   # 最小二乗法で直線をフィット(mx + c)
+
+def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
+    filtered_x_coords = []
+    filtered_y_coords = []
+    for i in range(len(grouped_x_coords)):
+        x = grouped_x_coords[i]
+        y = grouped_y_coords[i]
+        # 周囲の点をチェック
+        distances = np.sqrt((grouped_x_coords - x) ** 2 + (grouped_y_coords - y) ** 2)
+        # 半径内に他の点があるかチェック
+        if np.sum((distances < radius) & (distances > 0)) > 0:
+            filtered_x_coords.append(x)
+            filtered_y_coords.append(y)
+    return np.array(filtered_x_coords), np.array(filtered_y_coords)
+
+
+def leastSquare(filtered_x_coords, filtered_y_coords):
+    if len(filtered_x_coords) > 0:
+        # 最小二乗法
+        A = np.vstack([filtered_x_coords, np.ones(len(filtered_x_coords))]).T
+        m, _ = np.linalg.lstsq(A, filtered_y_coords, rcond=None)[0]
         m = -m
         return m
     return None
 
+
 def process_image(image_path):
     global m, binary_image
     # 赤色のピクセルを抽出して2値化
-    binary_image = threshold(image_path)
+    binary_image = binarization(image_path)
     # 画像のノイズを消す
-    denoised_image = remove_noise(binary_image)
+    denoised_image = remove_noise(binary_image, 6, 0.7)
+    # 白いピクセルの座標を抽出
+    y_coords, x_coords = np.where(denoised_image == 255)
+    # 残った点をグループ化
+    grouped_x_coords, grouped_y_coords = group_coordinates(x_coords, y_coords, 20)   # 数値の入力はstep数
+    # 孤立した点を削除
+    filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, 40) 
     # 最小二乗法で直線フィット
-    cx, cy, m = leastSquare(denoised_image)
+    m = leastSquare(filtered_x_coords, filtered_y_coords)
     
     print(m)
     if (m is not None):
@@ -138,7 +153,7 @@ def process_image(image_path):
 # グローバル変数
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine3.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine5.jpg'
 
 
 """

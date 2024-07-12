@@ -36,7 +36,7 @@ def move(direction, distance):
     receive()
 """
 
-def threshold(image_path):
+def binarization(image_path):
     # 画像を読み込む
     image = cv2.imread(image_path)
     if image is None:
@@ -65,7 +65,7 @@ def threshold(image_path):
     return binary_image
 
 
-def remove_noise(binary_image, cell_size=6, threshold=0.7):
+def remove_noise(binary_image, cell_size, threshold):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
         for x in range(0, width, cell_size):
@@ -80,49 +80,70 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
     return binary_image
 
 
-def center_leastSquare(binary_image):
-    # 重心計算
-    moments = cv2.moments(binary_image)   # モーメントを計算
-    if moments["m00"] != 0:   # 重心が存在するか確認
-        cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
-        cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
-    else:
-        cx, cy = None, None   # 重心が存在しない場合
-        
-    # 最小二乗法
-    # 白色のピクセル座標を取得(y,x_coordsは配列)
-    y_coords, x_coords = np.where(binary_image == 255)
+def group_coordinates(x_coords, y_coords, step):
+    grouped_y_coords = []
+    grouped_x_coords = []
+
+    for y in range(0, max(y_coords) + step, step):
+        mask = (y_coords >= y) & (y_coords < y + step)
+        if np.any(mask):
+            avg_y = np.mean(y_coords[mask])
+            avg_x = np.mean(x_coords[mask])
+            grouped_y_coords.append(avg_y)
+            grouped_x_coords.append(avg_x)
     
-    if len(x_coords) > 0:
-        grouped_y_coords = []
-        grouped_x_coords = []
+    return np.array(grouped_x_coords), np.array(grouped_y_coords)
 
-        step = 20
-        for y in range(0, max(y_coords) + step, step):
-            mask = (y_coords >= y) & (y_coords < y + step)
-            if np.any(mask):
-                avg_y = np.mean(y_coords[mask])
-                avg_x = np.mean(x_coords[mask])
-                grouped_y_coords.append(avg_y)
-                grouped_x_coords.append(avg_x)
 
-        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T
-        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
+def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
+    filtered_x_coords = []
+    filtered_y_coords = []
+    for i in range(len(grouped_x_coords)):
+        x = grouped_x_coords[i]
+        y = grouped_y_coords[i]
+        # 周囲の点をチェック
+        distances = np.sqrt((grouped_x_coords - x) ** 2 + (grouped_y_coords - y) ** 2)
+        # 半径内に他の点があるかチェック
+        if np.sum((distances < radius) & (distances > 0)) > 0:
+            filtered_x_coords.append(x)
+            filtered_y_coords.append(y)
+    return np.array(filtered_x_coords), np.array(filtered_y_coords)
+
+
+def center_leastSquare(filtered_x_coords, filtered_y_coords):
+    if len(filtered_x_coords) > 0:
+        # 重心を計算
+        cx = np.mean(filtered_x_coords)
+        cy = np.mean(filtered_y_coords)
+
+        # 最小二乗法
+        A = np.vstack([filtered_x_coords, np.ones(len(filtered_x_coords))]).T
+        m, _ = np.linalg.lstsq(A, filtered_y_coords, rcond=None)[0]
         m = -m
+
         # デバッグ用のプリント文
         print("(m):", m)
+        print("(cx):", cx)
+        print("(cy):", cy)
+
         return cx, cy, m
-    return cx, cy, None
+    return None, None, None
 
 
 def process_image(image_path):
     global m, binary_image
     # 赤色のピクセルを抽出して2値化
-    binary_image = threshold(image_path)
+    binary_image = binarization(image_path)
     # 画像のノイズを消す
-    denoised_image = remove_noise(binary_image)
+    denoised_image = remove_noise(binary_image, 6, 0.7)
+    # 白いピクセルの座標を抽出
+    y_coords, x_coords = np.where(denoised_image == 255)
+    # 残った点をグループ化
+    grouped_x_coords, grouped_y_coords = group_coordinates(x_coords, y_coords, 20)   # 数値の入力はstep数
+    # 孤立した点を削除
+    filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, 40)
     # 最小二乗法で直線フィット
-    cx, cy, m = center_leastSquare(denoised_image)
+    cx, cy, m = center_leastSquare(filtered_x_coords, filtered_y_coords)
     
     if (m is not None):
         print(f"Fitted line: y = {m}x")
@@ -131,15 +152,18 @@ def process_image(image_path):
         angle_error = np.degrees(radians_error)   # ラジアンを度に変換
         angle_error = int(angle_error)
         angle_error = -angle_error
-        print("angle_error", angle_error)
+        print("(angle_error)", angle_error)
         """
         if(angle_error < 0):
             move("ccw", -angle_error)
         else:
             move("cw", angle_error)
         time.sleep(5)
-        y = 100 - 100 * math.cos(radians_error)
+        """
+        y = 100 - 100 * math.cos(radians_error)   # ここの100はprevDistance
         y = int(y)
+        print("(y)", y)
+        """
         move("forward", y)
         time.sleep(3)
         """

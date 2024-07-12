@@ -4,11 +4,14 @@
 import cv2
 import socket
 import time
+import numpy as np
 
 # module
 from capture_image import capture_image
-from threshold import threshold
+from binarization import binarization
 from remove_noise import remove_noise
+from group_coordinates import group_coordinates
+from remove_isolated_points import remove_isolated_points
 from center_leastSquare import center_leastSquare
 from control import control
 
@@ -24,6 +27,11 @@ N = int(input("Q:机が縦に何個置かれてますか？   A:"))
 M = int(input("A:机が横に何個置かれてますか？   A:"))
 Move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
 Move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
+# 定数初期化
+Cell_size = 6
+Threshold = 0.7
+Step = 20
+Radius = 40
 
 
 # Drone設定
@@ -70,9 +78,12 @@ def calculate_control1():
     image_path = capture_image()
     image = cv2.imread(image_path)
     # x軸制御
-    binary_image = threshold(image)
-    denoise_image = remove_noise(binary_image, 6, 0.7)
-    cx, cy, m = center_leastSquare(denoise_image)
+    binary_image = binarization(image)
+    denoised_image = remove_noise(binary_image, Cell_size, Threshold)
+    y_coords, x_coords = np.where(denoised_image == 255)
+    grouped_x_coords, grouped_y_coords = group_coordinates(x_coords, y_coords, Step)
+    filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, Radius)
+    cx, cy, m = center_leastSquare(filtered_x_coords, filtered_y_coords)
     _, _, x_error = control(prevDistance, 960, 720, cx, cy, m)
     return x_error
 
@@ -80,10 +91,13 @@ def calculate_control2():
     # 写真を撮る
     image_path = capture_image()
     image = cv2.imread(image_path)
-    # 角度,y軸制御
-    binary_image = threshold(image)
-    denoise_image = remove_noise(binary_image, 6, 0.7)
-    cx, cy, m = center_leastSquare(denoise_image)
+    # 角度, y軸制御
+    binary_image = binarization(image)
+    denoised_image = remove_noise(binary_image, Cell_size, Threshold)
+    y_coords, x_coords = np.where(denoised_image == 255)
+    grouped_x_coords, grouped_y_coords = group_coordinates(x_coords, y_coords, Step)
+    filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, Radius)
+    cx, cy, m = center_leastSquare(filtered_x_coords, filtered_y_coords)
     angle_error, y_error, _ = control(prevDistance, 960, 720, cx, cy, m)
     return angle_error, y_error
 

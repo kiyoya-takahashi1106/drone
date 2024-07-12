@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 # 画像を二値化
-def threshold(image):
+def binarization(image):
     if image is None:
         raise FileNotFoundError(f"Image can not found")
     

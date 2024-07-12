@@ -36,7 +36,7 @@ def move(direction, distance):
 """
 
 
-def threshold(image_path):
+def binarization(image_path):
     # 画像を読み込む
     image = cv2.imread(image_path)
     if image is None:
@@ -66,7 +66,7 @@ def threshold(image_path):
     return binary_image
 
 
-def remove_noise(binary_image, cell_size=6, threshold=0.7):
+def remove_noise(binary_image, cell_size, threshold):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
         for x in range(0, width, cell_size):
@@ -81,69 +81,86 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
     return binary_image
 
 
-def center_leastSquare(binary_image):
-    # 重心計算
-    moments = cv2.moments(binary_image)   # モーメントを計算
-    if moments["m00"] != 0:   # 重心が存在するか確認
-        cx = int(moments["m10"] / moments["m00"])   # 重心のX座標を計算
-        cy = int(moments["m01"] / moments["m00"])   # 重心のY座標を計算
-    else:
-        cx, cy = None, None   # 重心が存在しない場合
-    
-    
-    # 最小二乗法
-    # 白色のピクセル座標を取得(y,x_coordsは配列)
-    y_coords, x_coords = np.where(binary_image == 255)  # 白色のピクセル座標を取得
+def group_coordinates(x_coords, y_coords, step):
+    grouped_y_coords = []
+    grouped_x_coords = []
 
-    if len(x_coords) > 0:  # 座標が存在するか確認
-        # y座標をstepピクセルごとにグループ化してx座標の平均を計算
-        grouped_y_coords = []
-        grouped_x_coords = []
-        
-        step = 20
-        for y in range(0, max(y_coords) + step, step):
-            mask = (y_coords >= y) & (y_coords < y + step)
-            if np.any(mask):
-                avg_y = np.mean(y_coords[mask])
-                avg_x = np.mean(x_coords[mask])
-                grouped_y_coords.append(avg_y)
-                grouped_x_coords.append(avg_x)
+    for y in range(0, max(y_coords) + step, step):
+        mask = (y_coords >= y) & (y_coords < y + step)
+        if np.any(mask):
+            avg_y = np.mean(y_coords[mask])
+            avg_x = np.mean(x_coords[mask])
+            grouped_y_coords.append(avg_y)
+            grouped_x_coords.append(avg_x)
+    
+    return np.array(grouped_x_coords), np.array(grouped_y_coords)
 
-        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T
-        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
+
+def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
+    filtered_x_coords = []
+    filtered_y_coords = []
+    for i in range(len(grouped_x_coords)):
+        x = grouped_x_coords[i]
+        y = grouped_y_coords[i]
+        # 周囲の点をチェック
+        distances = np.sqrt((grouped_x_coords - x) ** 2 + (grouped_y_coords - y) ** 2)
+        # 半径内に他の点があるかチェック
+        if np.sum((distances < radius) & (distances > 0)) > 0:
+            filtered_x_coords.append(x)
+            filtered_y_coords.append(y)
+    return np.array(filtered_x_coords), np.array(filtered_y_coords)
+
+
+def center_leastSquare(filtered_x_coords, filtered_y_coords):
+    if len(filtered_x_coords) > 0:
+        # 重心を計算
+        cx = np.mean(filtered_x_coords)
+        cy = np.mean(filtered_y_coords)
+
+        # 最小二乗法
+        A = np.vstack([filtered_x_coords, np.ones(len(filtered_x_coords))]).T
+        m, _ = np.linalg.lstsq(A, filtered_y_coords, rcond=None)[0]
         m = -m
+
         # デバッグ用のプリント文
         print("(m):", m)
+        # print("(cx):", cx)
+        # print("(cy):", cy)
+
         return cx, cy, m
-    return cx, cy, None
+    return None, None, None
 
 
 def process_image(image_path):
     global m, binary_image
     # 赤色のピクセルを抽出して2値化
-    binary_image = threshold(image_path)
+    binary_image = binarization(image_path)
     # 画像のノイズを消す
-    denoised_image = remove_noise(binary_image)
+    denoised_image = remove_noise(binary_image, 6, 0.7)
+    # 白いピクセルの座標を抽出
+    y_coords, x_coords = np.where(denoised_image == 255)
+    # 残った点をグループ化
+    grouped_x_coords, grouped_y_coords = group_coordinates(x_coords, y_coords, 20)   # 数値の入力はstep数
+    # 孤立した点を削除
+    filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, 40)
     # 最小二乗法で直線フィット
-    cx, cy, m = center_leastSquare(denoised_image)
-    print("cx, cy", cx, cy)
-    print("m", m)
+    cx, cy, m = center_leastSquare(filtered_x_coords, filtered_y_coords)
 
     # fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
     # fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
     # fx = 0.005784 * np.exp(0.013606 * (720 - cy)) + 0.346111
     # fx = 0.006689 * np.exp(0.013240 * (720 - cy)) + 0.359777
     fx = 0.006912 * np.exp(0.013168 * (720 - cy)) + 0.355108
-    print("fx", fx)
+    print("(fx)", fx)
 
     # 重心cxと画面中心のずれ(d)
     cx_middle_error = 960//2 - cx
-    print("cx_middle_errir", cx_middle_error)
+    print("(cx_middle_errir)", cx_middle_error)
 
     # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
     x_error = -cx_middle_error * fx
     x_error = int(x_error)
-    print("x_error", x_error)
+    print("(x_error)", x_error)
 
     """
     if(0 < x_error):
@@ -157,7 +174,7 @@ def process_image(image_path):
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine150_2.jpg'
+image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine50_2.jpg'
 
 """
 # SDKモードを開始
