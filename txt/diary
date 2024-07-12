@@ -21,4 +21,4 @@
 7/09 [x軸制御試しの続き, 線以外の赤色も取得していたからマスクの範囲をしぼめた. Drone_appの作成(LeftHeader.jsx, TopHeader.jsx, Desk.jsx, Home.jsx, Loading.jsx作成,  react-roter設定)]
 7/10 [Drone_appの作成(Room.jsx, RegisteredRoom.jsx, TelloSetting.jsx, WifiConnect.jsx作成, useParantで[N,M,height,width]をurlで渡してく.) サンプル値を追加し,fxを更新.]
 7/11 [remove_noise.pyを追加し,画像のノイズを抑える事に成功. 制御の順番が無かったのでy軸→角度,x軸と順番付けしそれに伴ってmain.pyに制御計算関数もう一つ作成した. remove.noise.py作成. capture_image.py作成. angle_errorを正しく更新. main.pyの簡単な解説作成. 「同じ顔のやつはcompareしないコード」の作成. 2.pyに孤立点を削除するremove_isolated_points関数を導入. 明日他の実験データに試してみる.]
-7/12 [remove_isolated_points関数を実際実装してみる. 画像処理の順番を確定する. ]
+7/12 [remove_isolated_points関数を実際実装してみる. 画像処理の順番を確定する. firebaseを使って部屋情報をbatabaseに保存できるようにして, デプロイを試してみたがhosturlを押しても表示されなかった.]
