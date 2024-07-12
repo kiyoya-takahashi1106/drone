@@ -1,20 +1,52 @@
-# remove_isolated_pointsを実装していない時のcheck_red_center.py
+# x軸制御test
+# 赤線に対してある程度傾けて置く
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+import socket
+import time
+
+# TelloのIPアドレスとポート番号
+TELLO_IP = '192.168.10.1'
+TELLO_PORT = 8889
+TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
+
+# UDPソケットの作成
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('', 9001))
+
+def send(message):
+    try:
+        sock.sendto(message.encode(), TELLO_ADDRESS)
+        print(f"Sending message: {message}")
+    except Exception as e:
+        print(f"Error sending message: {e}")
+
+def receive():
+    try:
+        response, _ = sock.recvfrom(1024)   # response:受信データ , _:送信元アドレス
+        print(f"Received message: {response.decode()}")
+    except Exception as e:
+        print(f"Error receiving message: {e}")
+
+def move(direction, distance):
+    send(f"{direction} {distance}")
+    receive()
 
 
-def threshold(image_path):
+def binarization(image_path):
     # 画像を読み込む
     image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at {image_path}")
 
     # BGRからHSVに変換
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
-    lower_red = np.array([0, 100, 100])
-    upper_red = np.array([10, 255, 255])
+    lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
+    upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
+
     lower_red2 = np.array([160, 100, 100])
     upper_red2 = np.array([180, 255, 255])
 
@@ -29,10 +61,10 @@ def threshold(image_path):
     gray_image = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
     _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
 
-    return image, binary_image
+    return binary_image
 
 
-def remove_noise(binary_image, cell_size=6, threshold=0.7):
+def remove_noise(binary_image, cell_size, threshold):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
         for x in range(0, width, cell_size):
@@ -47,79 +79,146 @@ def remove_noise(binary_image, cell_size=6, threshold=0.7):
     return binary_image
 
 
-def center_leastSquare(binary_image):
-    moments = cv2.moments(binary_image)
-    if moments["m00"] != 0:
-        cx = int(moments["m10"] / moments["m00"])
-        cy = int(moments["m01"] / moments["m00"])
-    else:
-        cx, cy = None, None
+def group_coordinates(x_coords, y_coords, step):
+    grouped_y_coords = []
+    grouped_x_coords = []
 
-    y_coords, x_coords = np.where(binary_image == 255)
-    if len(x_coords) > 0:
-        grouped_y_coords = []
-        grouped_x_coords = []
+    for y in range(0, max(y_coords) + step, step):
+        mask = (y_coords >= y) & (y_coords < y + step)
+        if np.any(mask):
+            avg_y = np.mean(y_coords[mask])
+            avg_x = np.mean(x_coords[mask])
+            grouped_y_coords.append(avg_y)
+            grouped_x_coords.append(avg_x)
+    
+    return np.array(grouped_x_coords), np.array(grouped_y_coords)
 
-        step = 20
-        for y in range(0, max(y_coords) + step, step):
-            mask = (y_coords >= y) & (y_coords < y + step)
-            if np.any(mask):
-                avg_y = np.mean(y_coords[mask])
-                avg_x = np.mean(x_coords[mask])
-                grouped_y_coords.append(avg_y)
-                grouped_x_coords.append(avg_x)
 
-        A = np.vstack([grouped_x_coords, np.ones(len(grouped_x_coords))]).T
-        m, _ = np.linalg.lstsq(A, grouped_y_coords, rcond=None)[0]
+def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
+    filtered_x_coords = []
+    filtered_y_coords = []
+    for i in range(len(grouped_x_coords)):
+        x = grouped_x_coords[i]
+        y = grouped_y_coords[i]
+        # 周囲の点をチェック
+        distances = np.sqrt((grouped_x_coords - x) ** 2 + (grouped_y_coords - y) ** 2)
+        # 半径内に他の点があるかチェック
+        if np.sum((distances < radius) & (distances > 0)) > 0:
+            filtered_x_coords.append(x)
+            filtered_y_coords.append(y)
+    return np.array(filtered_x_coords), np.array(filtered_y_coords)
+
+
+def center_leastSquare(filtered_x_coords, filtered_y_coords):
+    if len(filtered_x_coords) > 0:
+        # 重心を計算
+        cx = np.mean(filtered_x_coords)
+        cy = np.mean(filtered_y_coords)
+
+        # 最小二乗法
+        A = np.vstack([filtered_x_coords, np.ones(len(filtered_x_coords))]).T
+        m, _ = np.linalg.lstsq(A, filtered_y_coords, rcond=None)[0]
         m = -m
+
         # デバッグ用のプリント文
         print("(m):", m)
-        return cx, cy, m, grouped_x_coords, grouped_y_coords
-    return cx, cy, None, [], []
+        # print("(cx):", cx)
+        # print("(cy):", cy)
+
+        return cx, cy, m
+    return None, None, None
 
 
-def plot_results(original_image, binary_image, denoised_image, cx, cy, m, grouped_x_coords, grouped_y_coords):
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6), constrained_layout=True)
+def process_image(image_path):
+    global m, binary_image
+    # 赤色のピクセルを抽出して2値化
+    binary_image = binarization(image_path)
+    # 画像のノイズを消す
+    denoised_image = remove_noise(binary_image, 6, 0.7)
+    # 白いピクセルの座標を抽出
+    y_coords, x_coords = np.where(denoised_image == 255)
+    # 残った点をグループ化
+    grouped_x_coords, grouped_y_coords = group_coordinates(x_coords, y_coords, 20)   # 数値の入力はstep数
+    # 孤立した点を削除
+    filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, 40)
+    # 最小二乗法で直線フィット
+    cx, cy, m = center_leastSquare(filtered_x_coords, filtered_y_coords)
 
-    # 元画像を表示
-    axes[0].imshow(cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB))
-    axes[0].set_title('Original Image')
-    axes[0].axis('off')  # 軸を表示しない
+    # fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
+    # fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
+    # fx = 0.005784 * np.exp(0.013606 * (720 - cy)) + 0.346111
+    # fx = 0.006689 * np.exp(0.013240 * (720 - cy)) + 0.359777
+    fx = 0.006912 * np.exp(0.013168 * (720 - cy)) + 0.355108
+    print("(fx)", fx)
 
-    # 二値化画像を表示
-    axes[1].imshow(binary_image, cmap='gray')
-    axes[1].set_title('Binary Image')
-    axes[1].axis('off')  # 軸を表示しない
+    # 重心cxと画面中心のずれ(d)
+    cx_middle_error = 960//2 - cx
+    print("(cx_middle_errir)", cx_middle_error)
 
-    # ノイズ除去後の画像を表示
-    axes[2].imshow(denoised_image, cmap='gray')
-    axes[2].set_title('Denoised Image')
-    axes[2].axis('off')  # 軸を表示しない
+    # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
+    x_error = -cx_middle_error * fx
+    x_error = int(x_error)
+    print("(x_error)", x_error)
 
-    if cx is not None and cy is not None:
-        for ax in axes:
-            ax.plot(cx, cy, 'ro')
-            # グループ化された座標をプロット
-            ax.plot(grouped_x_coords, grouped_y_coords, 'bo')
+    if(0 < x_error):
+        move("left", -x_error)
+    else:
+        move("right", x_error)
+        
 
-    plt.show()
+def capture_image():
+    cap = cv2.VideoCapture('udp://0.0.0.0:11111')
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+    time.sleep(2)  # ストリーミングの接続待機
+    if not cap.isOpened():
+        print("Error: Could not open video stream.")
+        return None
+
+    ret, frame = cap.read()
+    if ret:
+        image_path = 'captured_image.jpg'
+        cv2.imwrite(image_path, frame)
+        print(f"Image captured and saved to {image_path}")
+        cap.release()
+        return image_path
+    else:
+        print("Error: Could not read frame.")
+        cap.release()
+        return None
     
     
-# テスト用の画像パスを設定
-image_path = r'C:\Users\daiko\drone\img\redLine5.jpg'
-# image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine25_2.jpg'
+# グローバル変数
+cx, cy = None, None
+m = None
+binary_image = None
 
-# 二値化を行う
-original_image, binary_image = threshold(image_path)
+# SDKモードを開始
+send("command")
+receive()
 
-# ノイズ除去を行う
-denoised_image = remove_noise(binary_image.copy())
+# 離陸
+send("takeoff")
+receive()
+time.sleep(4)
 
-# 重心と最小二乗法を適用
-cx, cy, m, grouped_x_coords, grouped_y_coords = center_leastSquare(denoised_image)
+# ビデオストリーム開始
+send("streamon")
+receive()
 
-print(grouped_y_coords)
-print(grouped_x_coords)
+# 写真を撮る
+image_path = capture_image()
 
-# 結果をプロット
-plot_results(original_image, binary_image, denoised_image, cx, cy, m, grouped_x_coords, grouped_y_coords)
+# 画像処理
+if image_path:
+    process_image(image_path)
+
+# 着陸
+send("land")
+receive()
+
+# ビデオストリーム停止
+send("streamoff")
+receive()
+
+# ソケットを閉じる
+sock.close()

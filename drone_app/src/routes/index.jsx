@@ -4,6 +4,7 @@ import Home from "../main/Home";
 import RegisteredRoom from "../main/RegisteredRoom";
 import TelloSetting from "../main/TelloSetting";
 import WifiConnect from "../main/WifiConnect";
+import HowToUse from "../main/HowToUse";
 
 const Rooter = () => {
     return (
@@ -20,6 +21,8 @@ const Rooter = () => {
 
                 <Route path="/registeredroom" element={<RegisteredRoom />} />
                 <Route path="/registeredroom/:N/:M/:height/:width" element={<RegisteredRoom />} />
+
+                <Route path="/howtouse" element={<HowToUse />} />
             </Routes>
         </BrowserRouter>
     )

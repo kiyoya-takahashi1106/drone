@@ -4,6 +4,7 @@
 import cv2
 import math
 import numpy as np
+import socket
 import time
 # import socket
 
@@ -167,6 +168,7 @@ def process_image(image_path):
         move("forward", y)
         time.sleep(3)
         """
+
 
 # グローバル変数
 cx, cy = None, None

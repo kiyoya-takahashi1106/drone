@@ -1,5 +1,8 @@
+// src/pages/RegisteredRoom.jsx
 import { useEffect, useState } from "react";
 import { useParams } from 'react-router-dom';
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { db } from '../firebase';  // Firebaseの初期化設定をインポート
 import TopHeader from '../Components/TopHeader';
 import LeftHeader from '../Components/LeftHeader';
 import Room from '../Components/Room';
@@ -17,6 +20,16 @@ function RegisteredRoom() {
   const [width, setWidth] = useState(params.width);
   const [roomsInformation, setRoomsInformation] = useState([]);
 
+  useEffect(() => {
+    const fetchRooms = async () => {
+      const querySnapshot = await getDocs(collection(db, "rooms"));
+      const rooms = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRoomsInformation(rooms);
+    };
+
+    fetchRooms();
+  }, []);
+
   const handleSetRoomName = (event) => {
     setRoomName(event.target.value);
   };
@@ -33,7 +46,7 @@ function RegisteredRoom() {
     setWidth(event.target.value);
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (roomName.length >= 9) {
       alert('部屋名を8文字以下にしてください');
     } else {
@@ -44,16 +57,22 @@ function RegisteredRoom() {
         height: height,
         width: width
       };
-      setRoomsInformation([...roomsInformation, newRoom]);
-      setRoomName('');
-      setN('');
-      setM('');
-      setHeight('');
-      setWidth('');
+      try {
+        const docRef = await addDoc(collection(db, "rooms"), newRoom);
+        setRoomsInformation([...roomsInformation, { id: docRef.id, ...newRoom }]);
+        setRoomName('');
+        setN('');
+        setM('');
+        setHeight('');
+        setWidth('');
+      } catch (e) {
+        console.error("Error adding document: ", e);
+      }
     }
   };
 
-  const deleteRoom = (index) => {
+  const deleteRoom = async (index, id) => {
+    await deleteDoc(doc(db, "rooms", id));
     setRoomsInformation((prevRoomsInformation) => prevRoomsInformation.filter((_, i) => i !== index));
   };
 
@@ -92,7 +111,7 @@ function RegisteredRoom() {
           <div style={{}}>
             {roomsInformation.map((roomInformation, index) => (
               <div key={index}>
-                <Room roomInformation={roomInformation} idx={index} onDelete={() => deleteRoom(index)} />
+                <Room roomInformation={roomInformation} idx={index} onDelete={() => deleteRoom(index, roomInformation.id)} />
               </div>
             ))}
           </div>
