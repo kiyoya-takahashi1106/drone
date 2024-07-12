@@ -3,6 +3,7 @@
 # library
 import cv2
 import socket
+import sys
 import time
 import numpy as np
 
@@ -23,10 +24,11 @@ TELLO_PORT = 8889
 TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
 STREAM_URL = 'udp://0.0.0.0:11111'
 # パラメーター入力
-N = int(input("Q:机が縦に何個置かれてますか？   A:"))
-M = int(input("A:机が横に何個置かれてますか？   A:"))
-Move_lenght_y = int(input("Q:1回のy軸移動量を教えてください A:"))
-Move_lenght_x = int(input("Q:1回のx軸移動量を教えてください A:"))
+N = sys.argv[1]
+M = sys.argv[2]
+Move_lenght_y = sys.argv[3]
+Move_lenght_x = sys.argv[4]
+print(N, M, Move_lenght_y, Move_lenght_x)
 # 定数初期化
 Cell_size = 6
 Threshold = 0.7
