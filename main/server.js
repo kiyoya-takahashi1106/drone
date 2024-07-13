@@ -1,17 +1,15 @@
+const express = require("express");
 const http = require("http");
-const PORT = 8080;
 const { spawn } = require("child_process");
+const app = express();
+const PORT = 3001;   // Expressサーバーのポート番号
+const SERVER_PORT = 8081;   // 起動するサーバーのポート番号（例: 8081に変更）
 
-// Create a server object:
-const server = http.createServer(function (req, res) {
-  const urlParts = req.url.split("/");
-  if (urlParts.length === 5) {
-    const N = urlParts[1];
-    const M = urlParts[2];
-    const height = urlParts[3];
-    const width = urlParts[4];
+// サーバーを起動するエンドポイント
+app.get("/:N/:M/:height/:width", (req, res) => {
+  const { N, M, height, width } = req.params;
 
-    // main.py を実行する
+  const server = http.createServer(function (req, res) {
     const pyProg = spawn("python", ["main.py", N, M, height, width]);
 
     pyProg.stdout.on("data", function (data) {
@@ -27,15 +25,19 @@ const server = http.createServer(function (req, res) {
     pyProg.on("close", (code) => {
       console.log(`child process exited with code ${code}`);
     });
-  } else {
-    res.end("Invalid endpoint");
-  }
+  });
+
+  server.listen(SERVER_PORT, (error) => {
+    if (error) {
+      console.log("Something went wrong", error);
+      res.send("Error starting the server");
+    } else {
+      console.log(`Server is listening on port ${SERVER_PORT}`);
+      res.send(`Server started on port ${SERVER_PORT}`);
+    }
+  });
 });
 
-server.listen(PORT, (error) => {
-  if (error) {
-    console.log("Something went wrong", error);
-  } else {
-    console.log("Server is listening on port " + PORT);
-  }
+app.listen(PORT, () => {
+  console.log(`Server is listening on port ${PORT}`);
 });

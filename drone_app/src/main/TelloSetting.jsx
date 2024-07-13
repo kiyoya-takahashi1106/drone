@@ -24,7 +24,7 @@ function TelloSetting() {
                     <div>➁(0,0)と(1,0)の席の間にセットしてください.</div>
                 </div>
             </div>
-            <Link to={{ pathname: "/home/setting/wificonnect/"+params.N+"/"+params.M+"/"+params.height+"/"+params.width }}>
+            <Link to={`/home/setting/executionphase/${params.N}/${params.M}/${params.height}/${params.width}`}>
               <button style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '20px', border: 'none', cursor: 'pointer' }}>Next</button>
             </Link>
         </div>
