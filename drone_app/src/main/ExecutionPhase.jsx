@@ -10,7 +10,8 @@ function ExecutionPhase() {
   // ボタンを押すとサーバーを起動する
   const handleButtonClick = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/${N}/${M}/${height}/${width}`);
+      // const response = await fetch(`http://localhost:3002/${N}/${M}/${height}/${width}`);
+      const response = await fetch(`http://localhost:3001`);
       const data = await response.text();
       console.log(data);
     } catch (error) {
