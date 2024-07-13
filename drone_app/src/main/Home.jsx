@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Desk from '../Components/Desk';
 import TopHeader from '../Components/TopHeader';
 import LeftHeader from '../Components/LeftHeader';
@@ -9,6 +9,7 @@ function Home() {
   const [M, setM] = useState('');
   const [height, setHeight] = useState('');
   const [width, setWidth] = useState('');
+  const navigate = useNavigate();
 
   const handleSetN = (event) => {
     setN(event.target.value);
@@ -21,6 +22,15 @@ function Home() {
   };
   const handleSetWidth = (event) => {
     setWidth(event.target.value);
+  };
+  
+  const handleClick = (event, path) => {
+    if (M === '' || N === '' || height === '' || width === '') {
+      alert('すべての項目を入力してください。');
+      event.preventDefault();
+    } else {
+      navigate(path);
+    }
   };
 
   return (
@@ -58,12 +68,18 @@ function Home() {
 
             <div style={{ height: '206px', width: '236px', fontFamily: '"Zen Dots", sans-serif', display: 'flex', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <Link to={{ pathname: "/home/setting/" + N + "/" + M + "/" + height + "/" + width }}>
-                  <button style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '70px', border: 'none', cursor: 'pointer' }}>Next</button>
-                </Link>
-                <Link to={{ pathname: "/registeredroom/" + N + "/" + M + "/" + height + "/" + width }}>
-                  <button style={{ fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', border: 'none', cursor: 'pointer' }}>Save</button>
-                </Link>
+                <button
+                  onClick={(event) => handleClick(event, `/home/setting/${N}/${M}/${height}/${width}`)}
+                  style={{ height: '70px', width: '180px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '70px', border: 'none', cursor: 'pointer' }}
+                >
+                  Next
+                </button>
+                <button
+                  onClick={(event) => handleClick(event, `/registeredroom/${N}/${M}/${height}/${width}`)}
+                  style={{ fontSize: '30px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: 'white', marginTop: '12px', border: 'none', cursor: 'pointer' }}
+                >
+                  Save
+                </button>
               </div>
             </div>
           </div>

@@ -47,27 +47,32 @@ function RegisteredRoom() {
   };
 
   const handleClick = async () => {
+    if (roomName === '' || N === '' || M === '' || height === '' || width === '') {
+      alert('すべての項目を入力してください。');
+      return;
+    }
     if (roomName.length >= 9) {
       alert('部屋名を8文字以下にしてください');
-    } else {
-      const newRoom = {
-        roomName: roomName,
-        N: N,
-        M: M,
-        height: height,
-        width: width
-      };
-      try {
-        const docRef = await addDoc(collection(db, "rooms"), newRoom);
-        setRoomsInformation([...roomsInformation, { id: docRef.id, ...newRoom }]);
-        setRoomName('');
-        setN('');
-        setM('');
-        setHeight('');
-        setWidth('');
-      } catch (e) {
-        console.error("Error adding document: ", e);
-      }
+      return;
+    }
+    
+    const newRoom = {
+      roomName: roomName,
+      N: N,
+      M: M,
+      height: height,
+      width: width
+    };
+    try {
+      const docRef = await addDoc(collection(db, "rooms"), newRoom);
+      setRoomsInformation([...roomsInformation, { id: docRef.id, ...newRoom }]);
+      setRoomName('');
+      setN('');
+      setM('');
+      setHeight('');
+      setWidth('');
+    } catch (e) {
+      console.error("Error adding document: ", e);
     }
   };
 

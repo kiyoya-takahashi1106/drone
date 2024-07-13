@@ -28,7 +28,7 @@ N = sys.argv[1]
 M = sys.argv[2]
 Move_lenght_y = sys.argv[3]
 Move_lenght_x = sys.argv[4]
-print(N, M, Move_lenght_y, Move_lenght_x)
+print("(N, M, Move_lenght_y, Move_lenght_x)", N, M, Move_lenght_y, Move_lenght_x)
 # 定数初期化
 Cell_size = 6
 Threshold = 0.7
