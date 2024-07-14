@@ -1,8 +1,7 @@
 # test用
+print("python script!!!!!")
 import socket
 import time
-
-print("test.py wo ziltukou simasu")
 
 # TelloのIPアドレスとポート番号
 TELLO_IP = '192.168.10.1'
@@ -11,7 +10,7 @@ TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
 
 # UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', 9001))
+sock.bind(('', 0))
 
 def send(message):
     try:

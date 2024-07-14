@@ -1,5 +1,4 @@
-# 机の横幅が長くなく,3回の写真でその机に座ってる全員映る前提
-# 充電量から飛ぶか決める機能つける
+print("python script!!!!!")
 # library
 import cv2
 import socket
@@ -28,6 +27,7 @@ N = sys.argv[1]
 M = sys.argv[2]
 Move_lenght_y = sys.argv[3]
 Move_lenght_x = sys.argv[4]
+N, M, Move_lenght_y, Move_lenght_x = int(N), int(M), int(Move_lenght_y), int(Move_lenght_x)
 print("(N, M, Move_lenght_y, Move_lenght_x)", N, M, Move_lenght_y, Move_lenght_x)
 # 定数初期化
 Cell_size = 6
@@ -38,7 +38,9 @@ Radius = 40
 
 # Drone設定
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', 9000))
+sock.bind(('', 0))
+selected_port = sock.getsockname()[1]
+print(f"Selected port: {selected_port}")
 
 def send(message):
     try:
