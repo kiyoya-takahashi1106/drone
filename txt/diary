@@ -23,3 +23,4 @@
 7/11 [remove_noise.pyを追加し,画像のノイズを抑える事に成功. 制御の順番が無かったのでy軸→角度,x軸と順番付けしそれに伴ってmain.pyに制御計算関数もう一つ作成した. remove.noise.py作成. capture_image.py作成. angle_errorを正しく更新. main.pyの簡単な解説作成. 「同じ顔のやつはcompareしないコード」の作成. 2.pyに孤立点を削除するremove_isolated_points関数を導入. 明日他の実験データに試してみる.]
 7/12 [remove_isolated_points関数を実際実装してみる. 画像処理の順番を確定する. firebaseを使って部屋情報をbatabaseに保存できるようにして, デプロイも行った.]
 7/13 [drone_appのExecutionPhase.jsxのbuttonからdroneのコマンドコードを実行できるようにした.(main\test_server.jsとtest.py)]
+7/14 [資料を作るためにWebApp,ExpressServer, PythonScript, Firebaseの関係図を作る. ]

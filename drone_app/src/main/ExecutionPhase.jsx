@@ -10,8 +10,8 @@ function ExecutionPhase() {
   // ボタンを押すとサーバーを起動する
   const handleButtonClick = async () => {
     try {
-      // const response = await fetch(`http://localhost:3002/${N}/${M}/${height}/${width}`);
-      const response = await fetch(`http://localhost:3001`);
+      const response = await fetch(`http://localhost:3001/${N}/${M}/${height}/${width}`);
+      // const response = await fetch(`http://localhost:3001`);   // test用
       const data = await response.text();
       console.log(data);
     } catch (error) {
@@ -30,8 +30,9 @@ function ExecutionPhase() {
               <div style={{ fontSize: '59px' }}>Execution Phase</div>
             </div>
             <div style={{ fontSize: '30px' }}>
-              <div>➀以下のボタンを押してください</div>
-              <div>➁TelloWifiと繋げてください</div>
+              <div>➀server.jsがあるところに移動してください</div>
+              <div>➁node server.jsする</div>
+              <div>➂TelloWifiと繋げてください</div>
             </div>
           </div>
           <button onClick={handleButtonClick} style={{ height: '120px', width: '300px', fontSize: '40px', fontFamily: '"Zen Dots", sans-serif', backgroundColor: '#D9D9D9', marginTop: '20px', border: 'none', cursor: 'pointer' }}>server start</button>

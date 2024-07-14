@@ -1,47 +1,72 @@
 const express = require("express");
-const http = require("http");
 const { spawn } = require("child_process");
+const wifi = require("node-wifi");
+const cors = require("cors");
 const app = express();
-const PORT = 3002;   // Expressサーバーのポート番号
+const PORT = 3001; // サーバーのポート番号
 
-// サーバーを起動するエンドポイント
-app.get("/:N/:M/:height/:width", (req, res) => {
-  const { N, M, height, width } = req.params;
-  console.log(`Received request with parameters: N=${N}, M=${M}, height=${height}, width=${width}`);
+// CORSを有効にする
+app.use(cors({ 
+  origin: 'http://localhost:3000'
+}));
 
-  // サーバーのインスタンスを作成
-  const server = http.createServer(function (req, res) {
-    const pyProg = spawn("python", ["main.py", N, M, height, width]);
-
-    pyProg.stdout.on("data", function (data) {
-      res.write(data.toString());
-      res.end();
-    });
-
-    pyProg.stderr.on("data", function (data) {
-      res.write(data.toString());
-      res.end();
-    });
-
-    pyProg.on("close", (code) => {
-      console.log(`child process exited with code ${code}`);
-    });
-  });
-
-  // 動的に空いているポートを見つけてサーバーをリッスンする
-  server.listen(0, () => {
-    const address = server.address();
-    console.log(`Server is listening on port ${address.port}`);
-    res.send(`Server started on port ${address.port}`);
-  });
-
-  // エラーハンドリング
-  server.on("error", (err) => {
-    console.error("Server error:", err);
-    res.status(500).send("Server error");
-  });
+// WiFiモジュールを初期化
+wifi.init({
+  iface: null // ネットワークインターフェース。nullに設定するとランダムなWiFiインターフェースが選ばれます。
 });
 
+// Telloネットワークに接続されているかを確認する関数
+function checkTelloConnection() {
+  return new Promise((resolve, reject) => {
+    wifi.getCurrentConnections((error, currentConnections) => {
+      if (error) {
+        return reject(error);
+      }
+      console.log("現在の接続:", currentConnections); // デバッグ情報を追加
+      const telloNetwork = currentConnections.find(connection =>
+        (connection.mac && connection.mac.startsWith("TELLO-"))
+      );
+      if (telloNetwork) {
+        console.log("Telloネットワークに接続されています:", telloNetwork.bssid || telloNetwork.mac);
+      } else {
+        console.log("Telloネットワークに接続されていません。");
+      }
+      resolve(!!telloNetwork);
+    });
+  });
+}
+
+// Telloネットワークに接続されている場合にmain.pyを実行するルート
+app.get("/:N/:M/:height/:width", async (req, res) => {
+  try {
+    const isConnectedToTello = await checkTelloConnection();
+    if (isConnectedToTello) {
+      const { N, M, height, width } = req.params;
+      console.log(`Received request with parameters: N=${N}, M=${M}, height=${height}, width=${width}`);
+
+      const pyProg = spawn("python", ["main.py", N, M, height, width]);
+
+      pyProg.stdout.on("data", function (data) {
+        res.write(data.toString());
+      });
+
+      pyProg.stderr.on("data", function (data) {
+        res.write(data.toString());
+      });
+
+      pyProg.on("close", (code) => {
+        res.end();
+        console.log(`child process exited with code ${code}`);
+      });
+    } else {
+      res.send("Not connected to Tello network.");
+    }
+  } catch (error) {
+    res.status(500).send(error.toString());
+  }
+});
+
+// サーバーを起動
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });

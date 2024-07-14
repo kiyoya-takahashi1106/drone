@@ -1,8 +1,14 @@
 const express = require("express");
 const { spawn } = require("child_process");
 const wifi = require("node-wifi");
+const cors = require("cors");
 const app = express();
 const PORT = 3001; // サーバーのポート番号
+
+// CORSを有効にする
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
 
 // WiFiモジュールを初期化
 wifi.init({
