@@ -10,8 +10,8 @@ function ExecutionPhase() {
   // ボタンを押すとサーバーを起動する
   const handleButtonClick = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/${N}/${M}/${height}/${width}`);
-      // const response = await fetch(`http://localhost:3001`);   // test用
+      // const response = await fetch(`http://localhost:3001/${N}/${M}/${height}/${width}`);
+      const response = await fetch(`http://localhost:3001`);   // test用
       const data = await response.text();
       console.log(data);
     } catch (error) {
@@ -30,7 +30,7 @@ function ExecutionPhase() {
               <div style={{ fontSize: '59px' }}>Execution Phase</div>
             </div>
             <div style={{ fontSize: '30px' }}>
-              <div>➀server.jsがあるところに移動してください</div>
+              <div>➀server.jsのフォルダに移動してください</div>
               <div>➁node server.jsする</div>
               <div>➂TelloWifiと繋げてください</div>
             </div>

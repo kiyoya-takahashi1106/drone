@@ -34,7 +34,7 @@ plt.show()
 # フィッティングした関数の式を表示
 print(f"Fitted Exponential Function: y = {a:.6f} * exp({b:.6f} * x) + {c:.6f}")
 
-
 # 試してみる
-for x, test in zip(x_lst, test_lst):
-    print((0.003051 * np.exp(0.015006 * x) + 0.430705)*test)
+test_cy = 559.5528607172206
+test_cx = 233.2347815989389
+print((0.006912 * np.exp(0.013168 * (720 - test_cy)) + 0.355108) )

@@ -1,14 +1,8 @@
-# 角度,y軸制御test
-# 赤線に対してある程度傾けて置く
-
 import cv2
-import math
 import numpy as np
 import socket
 import time
-# import socket
 
-"""
 # TelloのIPアドレスとポート番号
 TELLO_IP = '192.168.10.1'
 TELLO_PORT = 8889
@@ -16,7 +10,7 @@ TELLO_ADDRESS = (TELLO_IP, TELLO_PORT)
 
 # UDPソケットの作成
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', 9001))
+sock.bind(('', 9000))
 
 def send(message):
     try:
@@ -35,7 +29,6 @@ def receive():
 def move(direction, distance):
     send(f"{direction} {distance}")
     receive()
-"""
 
 def binarization(image_path):
     # 画像を読み込む
@@ -49,6 +42,7 @@ def binarization(image_path):
     # 赤色の範囲を定義（赤色は2つの範囲をカバーするため、2つのマスクを作成）
     lower_red = np.array([0, 100, 100])  # ここを調整して範囲を絞ります
     upper_red = np.array([10, 255, 255])  # ここを調整して範囲を絞ります
+
     lower_red2 = np.array([160, 100, 100])
     upper_red2 = np.array([180, 255, 255])
 
@@ -65,7 +59,6 @@ def binarization(image_path):
 
     return binary_image
 
-
 def remove_noise(binary_image, cell_size, threshold):
     height, width = binary_image.shape[:2]
     for y in range(0, height, cell_size):
@@ -79,7 +72,6 @@ def remove_noise(binary_image, cell_size, threshold):
                 binary_image[y:y+cell_size, x:x+cell_size] = 0
 
     return binary_image
-
 
 def group_coordinates(x_coords, y_coords, step):
     grouped_y_coords = []
@@ -95,7 +87,6 @@ def group_coordinates(x_coords, y_coords, step):
     
     return np.array(grouped_x_coords), np.array(grouped_y_coords)
 
-
 def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
     filtered_x_coords = []
     filtered_y_coords = []
@@ -110,7 +101,6 @@ def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
             filtered_y_coords.append(y)
     return np.array(filtered_x_coords), np.array(filtered_y_coords)
 
-
 def center_leastSquare(filtered_x_coords, filtered_y_coords):
     if len(filtered_x_coords) > 0:
         # 重心を計算
@@ -124,12 +114,11 @@ def center_leastSquare(filtered_x_coords, filtered_y_coords):
 
         # デバッグ用のプリント文
         print("(m):", m)
-        print("(cx):", cx)
-        print("(cy):", cy)
+        # print("(cx):", cx)
+        # print("(cy):", cy)
 
         return cx, cy, m
     return None, None, None
-
 
 def process_image(image_path):
     global m, binary_image
@@ -145,55 +134,80 @@ def process_image(image_path):
     filtered_x_coords, filtered_y_coords = remove_isolated_points(grouped_x_coords, grouped_y_coords, 40)
     # 最小二乗法で直線フィット
     cx, cy, m = center_leastSquare(filtered_x_coords, filtered_y_coords)
-    
-    if (m is not None):
-        print(f"Fitted line: y = {m}x")
-        tan_theta = 1 / m
-        radians_error = np.arctan(tan_theta)   # arctan関数を使用して角度θをラジアンで求める
-        angle_error = np.degrees(radians_error)   # ラジアンを度に変換
-        angle_error = int(angle_error)
-        angle_error = -angle_error
-        print("(angle_error)", angle_error)
-        """
-        if(angle_error < 0):
-            move("ccw", -angle_error)
-        else:
-            move("cw", angle_error)
-        time.sleep(5)
-        """
-        y = 100 - 100 * math.cos(radians_error)   # ここの100はprevDistance
-        y = int(y)
-        print("(y)", y)
-        """
-        move("forward", y)
-        time.sleep(3)
-        """
 
+    # fx = 0.001265 * np.exp(0.018237 * (720 - cy)) + 0.367068
+    # fx = 0.003051 * np.exp(0.015006 * (720 - cy)) + 0.430705
+    # fx = 0.005784 * np.exp(0.013606 * (720 - cy)) + 0.346111
+    # fx = 0.006689 * np.exp(0.013240 * (720 - cy)) + 0.359777
+    fx = 0.006912 * np.exp(0.013168 * (720 - cy)) + 0.355108
+    print("(fx)", fx)
+
+    # 重心cxと画面中心のずれ(d)
+    cx_middle_error = 960//2 - cx
+    print("(cx_middle_error)", cx_middle_error)
+
+    # drone画面のx方向のずれを入れたら, y軸を基準とする実際のx方向のずれが分かる.
+    x_error = -cx_middle_error * fx
+    x_error = int(x_error)
+    print("(x_error)", x_error)
+
+    if x_error > 0:
+        move("right", x_error)
+    else:
+        move("left", -x_error)
+        
+def capture_image():
+    cap = cv2.VideoCapture('udp://0.0.0.0:11111')
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+    time.sleep(2)  # ストリーミングの接続待機
+    if not cap.isOpened():
+        print("Error: Could not open video stream.")
+        return None
+
+    ret, frame = cap.read()
+    if ret:
+        image_path = 'captured_image.jpg'
+        cv2.imwrite(image_path, frame)
+        print(f"Image captured and saved to {image_path}")
+        cap.release()
+        return image_path
+    else:
+        print("Error: Could not read frame.")
+        cap.release()
+        return None
 
 # グローバル変数
 cx, cy = None, None
 m = None
 binary_image = None
-image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine150_1.jpg'
 
-"""
 # SDKモードを開始
 send("command")
 receive()
 
 # 離陸
 send("takeoff")
-time.sleep(8)
-"""
+receive()
+time.sleep(3)
+
+# ビデオストリーム開始
+send("streamon")
+receive()
+
+# 写真を撮る
+image_path = capture_image()
 
 # 画像処理
-process_image(image_path)
+if image_path:
+    process_image(image_path)
 
-"""
 # 着陸
 send("land")
 receive()
 
+# ビデオストリーム停止
+send("streamoff")
+receive()
+
 # ソケットを閉じる
 sock.close()
-"""

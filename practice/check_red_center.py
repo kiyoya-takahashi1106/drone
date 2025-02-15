@@ -69,7 +69,7 @@ def remove_isolated_points(grouped_x_coords, grouped_y_coords, radius):
         # 周囲の点をチェック
         distances = np.sqrt((grouped_x_coords - x) ** 2 + (grouped_y_coords - y) ** 2)
         # 半径内に他の点があるかチェック
-        if np.sum((distances < radius) & (distances > 0)) > 0:
+        if np.sum((distances < radius) & (distances > 0)) >= 2:   # 2こ以上ならok
             filtered_x_coords.append(x)
             filtered_y_coords.append(y)
     return np.array(filtered_x_coords), np.array(filtered_y_coords)
@@ -122,7 +122,7 @@ def plot_results(original_image, binary_image, denoised_image, cx, cy, m, filter
 
 
 # テスト用の画像パスを設定
-image_path = r'C:\Users\daiko\drone\img\redLine5.jpg'
+image_path = r'C:\Users\daiko\drone\img\captured_image1.jpg'
 # image_path = r'C:\Users\daiko\drone\img\redLine_test\redLine150_1.jpg'
 
 # 二値化を行う
